@@ -1,0 +1,94 @@
+[
+  {
+    "name": "Srujana Gandla",
+    "index": 96,
+    "found": true,
+    "email_before": "iamgsrujana@gmail.com",
+    "photo_before": "photos/WhatsApp_Image_2025-09-30_at_10.43.08_-_Srujana_Gandla.jpeg",
+    "batch_before": "",
+    "applied": {
+      "batch": "Batch 1",
+      "photo": "photos/WhatsApp_Image_2025-09-30_at_10.43.08_-_Srujana_Gandla.jpeg"
+    }
+  },
+  {
+    "name": "Vikas Sharma",
+    "index": 42,
+    "found": true,
+    "email_before": "ravinstbglr@gmail.com",
+    "photo_before": "",
+    "batch_before": "",
+    "applied": {
+      "batch": "Batch 1"
+    }
+  },
+  {
+    "name": "Mahi Manjari Singh",
+    "index": 87,
+    "found": true,
+    "email_before": "mahisinghparashar@gmail.com",
+    "photo_before": "",
+    "batch_before": "",
+    "applied": {
+      "batch": "Batch 2"
+    }
+  },
+  {
+    "name": "Saksham Kumar",
+    "index": 28,
+    "found": true,
+    "email_before": "sakshamkr0806@gmail.com",
+    "photo_before": "",
+    "batch_before": "",
+    "applied": {
+      "batch": "Batch 1"
+    }
+  },
+  {
+    "name": "Anant Sharma",
+    "index": 103,
+    "found": true,
+    "email_before": "",
+    "photo_before": "",
+    "batch_before": "",
+    "applied": {
+      "email": "2102508710@svyasa-sas.edu.in",
+      "batch": "Batch 1"
+    }
+  },
+  {
+    "name": "Sujan Y D",
+    "index": 8,
+    "found": true,
+    "email_before": "",
+    "photo_before": "",
+    "batch_before": "",
+    "applied": {
+      "email": "ydsujan@gmail.com",
+      "batch": "Batch 1"
+    }
+  },
+  {
+    "name": "Ravi Sharma",
+    "index": 44,
+    "found": true,
+    "email_before": "ravinstbglr@gmail.com",
+    "photo_before": "",
+    "batch_before": "",
+    "applied": {
+      "batch": "Batch 1"
+    }
+  },
+  {
+    "name": "Shivansh Gaurav",
+    "index": 27,
+    "found": true,
+    "email_before": "",
+    "photo_before": "",
+    "batch_before": "",
+    "applied": {
+      "email": "2102508808@svyasa-sas.edu.in",
+      "batch": "Batch 1"
+    }
+  }
+]
