@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Directory</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Student Directory</h1>
+        
+        <div id="search-section">
+            <input type="text" id="search" placeholder="🔍 Search by name...">
+            <span id="student-count"></span>
+        </div>
+
+        <div id="student-grid"></div>
+    </div>
+
+    <!-- Modal for student details -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <img id="modal-photo" src="" alt="Student Photo">
+            <h2 id="modal-name"></h2>
+            <p id="modal-email"></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
