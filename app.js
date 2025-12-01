@@ -44,6 +44,8 @@ let students = [];
 
 const studentGrid = document.getElementById('student-grid');
 const searchInput = document.getElementById('search');
+const genderFilter = document.getElementById('gender-filter');
+const sortSelect = document.getElementById('sort-select');
 const studentCount = document.getElementById('student-count');
 const modal = document.getElementById('modal');
 const modalPhoto = document.getElementById('modal-photo');
@@ -57,7 +59,7 @@ async function loadStudents() {
     try {
         const response = await fetch('students.json');
         students = await response.json();
-        displayStudents(students);
+        applyFiltersAndSort();
     } catch (error) {
         console.error('Error loading students:', error);
         studentGrid.innerHTML = '<p style="text-align: center; color: var(--text-secondary); grid-column: 1/-1;">Error loading student data</p>';
@@ -95,6 +97,28 @@ function displayStudents(studentsToShow) {
         card.onclick = () => showModal(student);
         studentGrid.appendChild(card);
     });
+}
+
+function applyFiltersAndSort() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    const genderValue = genderFilter ? genderFilter.value : 'all';
+    const sortValue = sortSelect ? sortSelect.value : 'name-asc';
+
+    let filtered = students.filter(student => {
+        const name = (student.name || '').toLowerCase();
+        const email = (student.email || '').toLowerCase();
+        const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm);
+        const genderMatch = (genderValue === 'all') || ((student.gender || '').toLowerCase() === genderValue);
+        return matchesSearch && genderMatch;
+    });
+
+    if (sortValue === 'name-asc') {
+        filtered.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (sortValue === 'name-desc') {
+        filtered.sort((a,b) => (b.name || '').localeCompare(a.name || ''));
+    }
+
+    displayStudents(filtered);
 }
 
 // Show modal with student details
@@ -138,10 +162,16 @@ document.addEventListener('keydown', (e) => {
 
 // Search functionality
 searchInput.addEventListener('input', () => {
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    const filtered = students.filter(student => 
-        student.name.toLowerCase().includes(searchTerm) ||
-        (student.email && student.email.toLowerCase().includes(searchTerm))
-    );
-    displayStudents(filtered);
+    applyFiltersAndSort();
 });
+
+if (genderFilter) {
+    genderFilter.addEventListener('change', () => applyFiltersAndSort());
+}
+
+if (sortSelect) {
+    sortSelect.addEventListener('change', () => applyFiltersAndSort());
+}
+
+
+console.log("Hello, Developer! 👋");

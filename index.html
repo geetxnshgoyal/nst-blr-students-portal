@@ -47,6 +47,20 @@
                     </svg>
                     <input type="text" id="search" placeholder="Search by name or email...">
                 </div>
+
+                <div class="controls">
+                    <select id="gender-filter" aria-label="Filter by gender">
+                        <option value="all">All genders</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+
+                    <select id="sort-select" aria-label="Sort students">
+                        <option value="name-asc">Name A–Z</option>
+                        <option value="name-desc">Name Z–A</option>
+                    </select>
+                    <!-- batch filter removed (batch currently empty). -->
+                </div>
             </div>
 
             <div id="student-grid" class="student-grid"></div>

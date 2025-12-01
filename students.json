@@ -1,55 +1,877 @@
 [
-  {"name": "Nayan Raj", "email": "2102508772@svyasa-sas.edu.in", "photo": "photos/______Nayan_Raj.________003_-_NAYAN_RAJ.jpg"},
-  {"name": "Harshit Chand", "email": "2102508750@svyasa-sas.edu.in", "photo": "photos/17592142546595311519209407348428_-_Harshit_Chand.jpg"},
-  {"name": "Shiv Prakash Maurya", "email": "2102508806@svyasa-sas.edu.in", "photo": "photos/17599391433884994135578783049397_-_Shiv_Prakash_Maurya.jpg"},
-  {"name": "Abhijit Saha", "email": "2102508703@svyasa-sas.edu.in", "photo": "photos/Abhijit_Saha_file_-_Abhijit_Saha.jpg"},
-  {"name": "Abhinav Kumar", "email": "2102508704@svyasa-sas.edu.in", "photo": "photos/Abhinav_kumar_-_Abhinav_Kumar.jpg"},
-  {"name": "Aman Gupta", "email": "2102508709@svyasa-sas.edu.in", "photo": "photos/AmanGupta_file_-_Aman_Gupta.jpg"},
-  {"name": "Ananya Chavan", "email": "ananyachavan5926@gmail.com", "photo": "photos/Ananya_Chavan_-_Ananya_chavan.jpg"},
-  {"name": "Anjali Singh", "email": "2102508712@svyasa-sas.edu.in", "photo": "photos/Anjali_file_-_Anjali_Singh.jpg"},
-  {"name": "Aryan Patel", "email": "2102508719@svyasa-sas.edu.in", "photo": "photos/AryanPatel_-_Aryan_Patel.jpeg"},
-  {"name": "Bibhukesh Medhi", "email": "2102508728@svyasa-sas.edu.in", "photo": "photos/Bibhukesh_file_-_Bibhukesh.jpeg"},
-  {"name": "Deekshith R", "email": "2102508735@svyasa-sas.edu.in", "photo": "photos/Deekshith_file_-_Deekshith_R.jpeg"},
-  {"name": "Raaj Patre", "email": "2102508785@svyasa-sas.edu.in", "photo": "photos/F636B904-717D-4A8D-BA42-AC1A150B93B6_1_201_a_-_Raaj_Patre.jpeg"},
-  {"name": "Harikrishna C", "email": "2102508730@svyasa-sas.edu.in", "photo": "photos/Harikrishna_-_Harikrishna_.C.jpg"},
-  {"name": "Dhanishtha", "email": "dhanishtha706@gmail.com", "photo": "photos/IMG-20250615-WA0004_-_Dhanishtha.jpg"},
-  {"name": "Parijat Chakraborty", "email": "2102508779@svyasa-sas.edu.in", "photo": "photos/IMG-20250812-WA0007_-_Parijat___chakraborty.jpg"},
-  {"name": "Sakshi Shinde", "email": "2102508805@svyasa-sas.edu.in", "photo": "photos/IMG-20250817-WA0001_-_Sakshi.jpg"},
-  {"name": "Jithendra Sangu", "email": "2102508799@svyasa-sas.edu.in", "photo": "photos/IMG-20250819-WA0002_-_jithendra_reddy.jpg"},
-  {"name": "Saurabh Kumar", "email": "2102508803@svyasa-sas.edu.in", "photo": "photos/IMG_0552_-_Saurabh_Yadav.jpg"},
-  {"name": "Aditi Singh", "email": "2102508706@svyasa-sas.edu.in", "photo": "photos/IMG_20250826_102613_-_Aditi_singh.jpg"},
-  {"name": "Archita Singh", "email": "archugulu1000@gmail.com", "photo": "photos/IMG_20251007_232555_-_Archita_Singh.jpg"},
-  {"name": "Diganth N", "email": "Diganthshetty3621@gmail.com", "photo": "photos/IMG_4274_-_Diganth_Shetty.JPG"},
-  {"name": "Jaidev Basandrai", "email": "2102508754@svyasa-edu.edu.in", "photo": "photos/InShot_20250825_191140571_-_Jaidev.png"},
-  {"name": "Jaishree", "email": "2102508756@svyasa-sas.edu.in", "photo": "photos/Jaishree_-_Jaishree.jpg"},
-  {"name": "Jothinkumar B", "email": "2102508757@svyasa-sas.edu.in", "photo": "photos/Jothin_file_-_JOTHINKUMAR_B.jpg"},
-  {"name": "Lay Sandeep Shah", "email": "2102508763@svyasa-sas.edu.in", "photo": "photos/Layshah_file_-_LAY_SHAH.jpg"},
-  {"name": "Mahaveer Kumar Chhajer", "email": "2102508766@svyasa-sas.edu.in", "photo": "photos/Mahaveer_file_-_mahaveer_jain.jpeg"},
-  {"name": "Shresth Nanwani", "email": "2102508810@svyasa-sas.edu.in", "photo": "photos/My_photo_-_Shresth_Nanwani.png"},
-  {"name": "Dhruv Mehta", "email": "2102508741@svyasa-sas.edu.in", "photo": "photos/Name_file_-_Dhruv_Mehta.JPG"},
-  {"name": "Prateek Gupta", "email": "2102508783@svyasa-sas.edu.in", "photo": "photos/Name_file_-_PRATEEK_GUPTA.jpg"},
-  {"name": "Soham Muhury", "email": "2102508816@svyasa-sas.edu.in", "photo": "photos/Name_file_-_SOHAM_MUHURY.jpeg"},
-  {"name": "Sahitya Singh", "email": "2102508794@svyasa-sas.edu.in", "photo": "photos/Name_file_-_Sahitya_Singh.jpg"},
-  {"name": "Nithyaraj Murugan Mudhaliyar", "email": "2102508770@svyasa-sas.edu.in", "photo": "photos/Nithyaraj_file_-_Nithyaraj_Mudhaliyar.jpg"},
-  {"name": "Namah Omprakash", "email": "2102508771@svyasa-sas.edu.in", "photo": "photos/PHOTO-2025-09-30-14-37-38_-_Namah.jpg"},
-  {"name": "Dhashami J", "email": "2102508739@svyasa-sas.edu.in", "photo": "photos/Photo__-_Dhashami_J.jpg"},
-  {"name": "Aryan Chauhan", "email": "aarusharkie0405@gmail.com", "photo": "photos/Photo_on_30-09-25_at_6.03_PM_-_Aaru.jpeg"},
-  {"name": "Prachi Chaurasia", "email": "2102508780@svyasa-sas.edu.in", "photo": "photos/Prachi_file_-_Prachi_Chaurasia.jpg"},
-  {"name": "Sainy Verma", "email": "sainuverma12@gmail.com", "photo": "photos/Sainy_file_-_Sainy_Verma.jpg"},
-  {"name": "Samriddhi Raj", "email": "2102508798@svyasa-sas.edu.in", "photo": "photos/Samriddhi__file_-_Samriddhi_Raj.jpg"},
-  {"name": "Sanskar Bansal", "email": "2102508800@svyasa-sas.edu.in", "photo": "photos/Sanskar_file_-_Sanskar_Bansal.png"},
-  {"name": "Saubhagya Sharma", "email": "2102508802@svyasa-sas.edu.in", "photo": "photos/Saubhagya_File_-_Saubhagya_Sharma.jpeg"},
-  {"name": "Ediga Vikram Goud", "email": "2102508746@svyasa-sas.edu.in", "photo": "photos/Screenshot_2025-09-19_at_8.30.56_PM_-_EDIGA_VIKRAM_GOUD.png"},
-  {"name": "Shaaz Hemani", "email": "2102508804@svyasa-sas.edu.in", "photo": "photos/Screenshot_2025-10-02_at_3.59.07_PM_-_Shaaz_Hemani.png"},
-  {"name": "Addhya Nandini Singh", "email": "addyanandinisingh@gmail.com", "photo": "photos/Screenshot_2025-10-07-17-38-25-287_com.google.android.apps.photos_-_Addya_nandini_Singh.jpg"},
-  {"name": "Unnati Jaiswal", "email": "2102508819@svyasa-sas.edu.in", "photo": "photos/Screenshot_20250930_104325_WhatsApp_-_UNNATI_JAISWAL.jpg"},
-  {"name": "Shreyash Sarangdhar Ambedare", "email": "2102508812@svyasa-sas.edu.in", "photo": "photos/Shreyash_Ambedare_file_-_Shalu_Ambedare.jpg"},
-  {"name": "Sidharth Mishra", "email": "2102508815@svyasa-sas.edu.in", "photo": "photos/SidharthMishra_file_-_Sidharth.jpeg"},
-  {"name": "Anubhav Kumari", "email": "2102508713@svyasa-sas.edu.in", "photo": "photos/WhatsApp_Image_2025-09-30_at_10.42.24_-_Annubhav_Kumari.jpeg"},
-  {"name": "Srujana", "email": "iamgsrujana@gmail.com", "photo": "photos/WhatsApp_Image_2025-09-30_at_10.43.08_-_Srujana_Gandla.jpeg"},
-  {"name": "Nishtha Agarwal", "email": "2102508773@svyasa-sas.edu.in", "photo": "photos/_DSC5345_pp-8_Rs.130_-_Nishtha_Agarwal.JPG"},
-  {"name": "Abhay Tomar", "email": "2102508702@svyasa-sas.edu.in", "photo": "photos/abhay_file_-_abhay_tomar.JPG"},
-  {"name": "Akshay Kumar", "email": "2102508708@svyasa-sas.edu.in", "photo": "photos/akshay_file_-_Akshay_Sisodia.jpg"},
-  {"name": "Parijat Chakraborty", "email": "2102508779@svyasa-sas.edu.in", "photo": "photos/parijat_file_-_PARIJAT_CHAKRABORTY.jpeg"},
-  {"name": "Ruthvik V", "email": "Ruthvikvuppalapati49@gmail.com", "photo": "photos/17598302358316614627363236068009_-_Strangerthings_97.jpg"}
+  {
+    "name": "Jothin",
+    "email": "nst@joth.in",
+    "gender": "male",
+    "photo": "photos/Jothin_file_-_JOTHINKUMAR_B.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Raaj Patre",
+    "email": "2102508785@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/F636B904-717D-4A8D-BA42-AC1A150B93B6_1_201_a_-_Raaj_Patre.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "Ayush",
+    "email": "ayushpro1428@gmail.com",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Santhosh Chevuri",
+    "email": "santhoshchevuri2008@gmail.com",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Nithyaraj Murugan Mudhaliyar",
+    "email": "2102508770@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Nithyaraj_file_-_Nithyaraj_Mudhaliyar.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Nishtha Agarwal",
+    "email": "2102508773@svyasa-sas.edu.in",
+    "gender": "female",
+    "photo": "photos/_DSC5345_pp-8_Rs.130_-_Nishtha_Agarwal.JPG",
+    "batch": ""
+  },
+  {
+    "name": "SK Izaz Ahmed",
+    "email": "",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Sujan Y D",
+    "email": "",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Anjali Singh",
+    "email": "2102508712@svyasa-sas.edu.in",
+    "gender": "female",
+    "photo": "photos/Anjali_file_-_Anjali_Singh.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Asmitha. M",
+    "email": "",
+    "gender": "female",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "AJAY",
+    "email": "ajaygundla135@gmail.com",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Aryan Chauhan",
+    "email": "aarusharkie0405@gmail.com",
+    "gender": "male",
+    "photo": "photos/Photo_on_30-09-25_at_6.03_PM_-_Aaru.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "Rithull Raj Kallat",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Sahitya Singh",
+    "email": "2102508794@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Name_file_-_Sahitya_Singh.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Abhinav Kumar",
+    "email": "2102508704@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Abhinav_kumar_-_Abhinav_Kumar.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Saubhagya Sharma",
+    "email": "2102508802@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Saubhagya_File_-_Saubhagya_Sharma.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "Avanish",
+    "email": "amramoin2@gmail.com",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Jai Agarwal",
+    "email": "jaiagarwal101099@gmail.com",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Vineesh SS",
+    "email": "",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Bikash Jha",
+    "email": "",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Vikram Goud",
+    "email": "2102508746@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Screenshot_2025-09-19_at_8.30.56_PM_-_EDIGA_VIKRAM_GOUD.png",
+    "batch": ""
+  },
+  {
+    "name": "Kartikmanmode",
+    "email": "",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Harshit Chand",
+    "email": "2102508750@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/17592142546595311519209407348428_-_Harshit_Chand.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Kumari Shristi",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Samriddhi Raj",
+    "email": "2102508798@svyasa-sas.edu.in",
+    "gender": "female",
+    "photo": "photos/Samriddhi__file_-_Samriddhi_Raj.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Dhruv Mehta",
+    "email": "2102508741@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Name_file_-_Dhruv_Mehta.JPG",
+    "batch": ""
+  },
+  {
+    "name": "Shivansh Gaurav",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Saksham Kumar",
+    "email": "sakshamkr0806@gmail.com",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Liya M",
+    "email": "liya.manik.007@gmail.com",
+    "gender": "female",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Dev Kumar",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Rishit Jain",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Jaidev Basandrai",
+    "email": "2102508754@svyasa-edu.edu.in",
+    "gender": "male",
+    "photo": "photos/InShot_20250825_191140571_-_Jaidev.png",
+    "batch": ""
+  },
+  {
+    "name": "Aman Gupta",
+    "email": "2102508709@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/AmanGupta_file_-_Aman_Gupta.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Mahaveer Kumar Chhajer",
+    "email": "2102508766@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Mahaveer_file_-_mahaveer_jain.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "Bibhukesh Medhi",
+    "email": "2102508728@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Bibhukesh_file_-_Bibhukesh.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "Apish Rana",
+    "email": "apishrana682@gmail.com",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Mohd Faizan Khan",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Namah Omprakash",
+    "email": "2102508771@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/PHOTO-2025-09-30-14-37-38_-_Namah.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Archita Singh",
+    "email": "archugulu1000@gmail.com",
+    "gender": "female",
+    "photo": "photos/IMG_20251007_232555_-_Archita_Singh.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Abhijit Saha",
+    "email": "2102508703@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Abhijit_Saha_file_-_Abhijit_Saha.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Dhashami J",
+    "email": "2102508739@svyasa-sas.edu.in",
+    "gender": "female",
+    "photo": "photos/Photo__-_Dhashami_J.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Vikas Sharma",
+    "email": "ravinstbglr@gmail.com",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Unnati Jaiswal",
+    "email": "2102508819@svyasa-sas.edu.in",
+    "gender": "female",
+    "photo": "photos/Screenshot_20250930_104325_WhatsApp_-_UNNATI_JAISWAL.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Ravi Sharma",
+    "email": "ravinstbglr@gmail.com",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Atul Sahu",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Dhanishtha",
+    "email": "dhanishtha706@gmail.com",
+    "gender": "female",
+    "photo": "photos/IMG-20250615-WA0004_-_Dhanishtha.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Deepak Kumar Choudhary",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Geetansh Goyal",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Prateek Gupta",
+    "email": "2102508783@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Name_file_-_PRATEEK_GUPTA.jpg",
+    "batch": ""
+  },
+  {
+    "name": "ARUNIKA CHANDA",
+    "email": "arunika54321@gmail.com",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Aryan Patel",
+    "email": "2102508719@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/AryanPatel_-_Aryan_Patel.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "Anubhav Kumari",
+    "email": "2102508713@svyasa-sas.edu.in",
+    "gender": "female",
+    "photo": "photos/WhatsApp_Image_2025-09-30_at_10.42.24_-_Annubhav_Kumari.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "Sathwik",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Parijat Chakraborty",
+    "email": "2102508779@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/IMG-20250812-WA0007_-_Parijat___chakraborty.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Bhavesh Sharma",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Luvya Padmaj Rana",
+    "email": "luvyaprana@gmail.com",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Sadiqua Parween",
+    "email": "falaksadiqua786@gmail.com",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Sidharth Mishra",
+    "email": "2102508815@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/SidharthMishra_file_-_Sidharth.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "Lay Sandeep Shah",
+    "email": "2102508763@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Layshah_file_-_LAY_SHAH.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Shreyash Sarangdhar Ambedare",
+    "email": "2102508812@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Shreyash_Ambedare_file_-_Shalu_Ambedare.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Ripunjay Roshan",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Jithendra Sangu",
+    "email": "2102508799@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/IMG-20250819-WA0002_-_jithendra_reddy.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Ishika Jain",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Shaaz Hemani",
+    "email": "2102508804@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Screenshot_2025-10-02_at_3.59.07_PM_-_Shaaz_Hemani.png",
+    "batch": ""
+  },
+  {
+    "name": "Srishti Nagpure",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Sanskriti Jain",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Ashmita Kamath",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Shresth Nanwani",
+    "email": "2102508810@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/My_photo_-_Shresth_Nanwani.png",
+    "batch": ""
+  },
+  {
+    "name": "Prashant C G",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Divya Yadav",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Harshit Shukla",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Shiv Prakash Maurya",
+    "email": "2102508806@svyasa-sas.edu.in",
+    "photo": "photos/17599391433884994135578783049397_-_Shiv_Prakash_Maurya.jpg",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Debangshu Sarkar",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Swayam Bangad",
+    "email": "swayambangad0007@gmail.com",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Divyanshu Prakash",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Chavi Makana",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Chinmaya S",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Vani Bansal",
+    "email": "bansalvani175@gmail.com",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Aarpan Lohora",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Jaishree",
+    "email": "2102508756@svyasa-sas.edu.in",
+    "photo": "photos/Jaishree_-_Jaishree.jpg",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Shanmuka Pranav Sai",
+    "email": "shanmukapranavsai@gmail.com",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Shubhangi Kumari",
+    "email": "shubhangikumari1504@gmail.com",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Saurabh Kumar",
+    "email": "2102508803@svyasa-sas.edu.in",
+    "photo": "photos/IMG_0552_-_Saurabh_Yadav.jpg",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Abhay Tomar",
+    "email": "2102508702@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/abhay_file_-_abhay_tomar.JPG",
+    "batch": ""
+  },
+  {
+    "name": "Paheli Choudhuri",
+    "email": "choudhuripaheli2006@gmail.com",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Rachana Adhikary",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Mahi Manjari Singh",
+    "email": "mahisinghparashar@gmail.com",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Shreya Agrawal",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Krishna Chaurasia",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Utsav Doye",
+    "email": "utsavdoye07@gmail.com",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Pankaj Kumar",
+    "email": "kumarstpankaj43@gmail.com",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Soham Muhury",
+    "email": "2102508816@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Name_file_-_SOHAM_MUHURY.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "Sanskar Bansal",
+    "email": "2102508800@svyasa-sas.edu.in",
+    "gender": "",
+    "photo": "photos/Sanskar_file_-_Sanskar_Bansal.png",
+    "batch": ""
+  },
+  {
+    "name": "Sumayya Khan",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Aditi Singh",
+    "email": "aditisinghgaur1408@gmail.com",
+    "gender": "female",
+    "photo": "photos/IMG_20250826_102613_-_Aditi_singh.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Srujana Gandla",
+    "email": "iamgsrujana@gmail.com",
+    "gender": "female",
+    "photo": "photos/WhatsApp_Image_2025-09-30_at_10.43.08_-_Srujana_Gandla.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "C Harikrishna",
+    "email": "",
+    "photo": "photos/Harikrishna_-_Harikrishna_.C.jpg",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Navya",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Siddhanth Shiraguppi",
+    "email": "siddhanthshiraguppi@gmail.com",
+    "gender": "",
+    "photo": "male",
+    "batch": ""
+  },
+  {
+    "name": "Samrat Sharma",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Rajveer Singh",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Aksh Wagle",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Anant Sharma",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Aditya Ghate",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Akshay Kumar",
+    "email": "2102508708@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/akshay_file_-_Akshay_Sisodia.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Ruthvik V",
+    "email": "Ruthvikvuppalapati49@gmail.com",
+    "gender": "male",
+    "photo": "photos/17598302358316614627363236068009_-_Strangerthings_97.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Anushka Gupta",
+    "email": "",
+    "photo": "",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Sainy Verma",
+    "email": "sainuverma12@gmail.com",
+    "gender": "female",
+    "photo": "photos/Sainy_file_-_Sainy_Verma.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Shivansh Goel",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Sakshi Shinde",
+    "email": "2102508805@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/IMG-20250817-WA0001_-_Sakshi.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Nayan Raj",
+    "email": "2102508772@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/______Nayan_Raj.________003_-_NAYAN_RAJ.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Diganth N",
+    "email": "Diganthshetty3621@gmail.com",
+    "gender": "male",
+    "photo": "photos/IMG_4274_-_Diganth_Shetty.JPG",
+    "batch": ""
+  },
+  {
+    "name": "Prachi Chaurasia",
+    "email": "2102508780@svyasa-sas.edu.in",
+    "photo": "photos/Prachi_file_-_Prachi_Chaurasia.jpg",
+    "gender": "female",
+    "batch": ""
+  },
+  {
+    "name": "Pranav Singh",
+    "email": "pranavmeharwal25@gmail.com",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Pm Mohammed Waaiz",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Deekshith R",
+    "email": "2102508735@svyasa-sas.edu.in",
+    "gender": "male",
+    "photo": "photos/Deekshith_file_-_Deekshith_R.jpeg",
+    "batch": ""
+  },
+  {
+    "name": "Mohammed Anas",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Dushyant Acharya",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Ananya Chavan",
+    "email": "ananyachavan5926@gmail.com",
+    "gender": "female",
+    "photo": "photos/Ananya_Chavan_-_Ananya_chavan.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Mohith Kumar",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Dhiraj Rathod",
+    "email": "rathoddhiraj310@gmail.com",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Addhya Nandini Singh",
+    "email": "addyanandinisingh@gmail.com",
+    "gender": "female",
+    "photo": "photos/Screenshot_2025-10-07-17-38-25-287_com.google.android.apps.photos_-_Addya_nandini_Singh.jpg",
+    "batch": ""
+  },
+  {
+    "name": "Srija",
+    "email": "chsaisrija2007@gmail.com",
+    "gender": "female",
+    "photo": "",
+    "batch": ""
+  },
+  {
+    "name": "Pulkit Namdev",
+    "email": "",
+    "photo": "",
+    "gender": "male",
+    "batch": ""
+  },
+  {
+    "name": "Shivam Kumar",
+    "email": "",
+    "gender": "male",
+    "photo": "",
+    "batch": ""
+  }
 ]
