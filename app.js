@@ -144,9 +144,9 @@ function showModal(student) {
     const githubContainer = document.getElementById('modal-github-container');
     const githubLink = document.getElementById('modal-github');
     if (student.github && student.github.trim() !== '') {
-        const username = student.github.replace(/^@/, '');
-        githubLink.href = `https://github.com/${username}`;
-        githubLink.textContent = `@${username}`;
+        const githubUrl = student.github.trim();
+        githubLink.href = githubUrl;
+        githubLink.textContent = githubUrl.replace(/^https?:\/\/(www\.)?/, '');
         githubContainer.style.display = 'flex';
     } else {
         githubContainer.style.display = 'none';
