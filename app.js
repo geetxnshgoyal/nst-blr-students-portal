@@ -80,16 +80,20 @@ function displayStudents(studentsToShow) {
         const card = document.createElement('div');
         card.className = 'student-card';
         
+        const githubBadge = (student.github && student.github.trim() !== '') 
+            ? ` <span class="github-badge" title="GitHub: ${student.github}">🔗</span>` 
+            : '';
+        
         if (student.photo && student.photo.trim() !== '') {
             card.innerHTML = `
                 <img src="${student.photo}" alt="${student.name}" onerror="this.outerHTML='<div class=\\'no-photo\\'>${student.name.charAt(0).toUpperCase()}</div>'">
-                <div class="name">${student.name}</div>
+                <div class="name">${student.name}${githubBadge}</div>
                 <div class="email">${student.email || 'No email'}</div>
             `;
         } else {
             card.innerHTML = `
                 <div class="no-photo">${student.name.charAt(0).toUpperCase()}</div>
-                <div class="name">${student.name}</div>
+                <div class="name">${student.name}${githubBadge}</div>
                 <div class="email">${student.email || 'No email'}</div>
             `;
         }
@@ -107,7 +111,9 @@ function applyFiltersAndSort() {
     let filtered = students.filter(student => {
         const name = (student.name || '').toLowerCase();
         const email = (student.email || '').toLowerCase();
-        const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm);
+        const github = (student.github || '').toLowerCase();
+        const linkedin = (student.linkedin || '').toLowerCase();
+        const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm) || github.includes(searchTerm) || linkedin.includes(searchTerm);
         const genderMatch = (genderValue === 'all') || ((student.gender || '').toLowerCase() === genderValue);
         return matchesSearch && genderMatch;
     });
@@ -134,6 +140,29 @@ function showModal(student) {
     }
     modalName.textContent = student.name;
     modalEmail.textContent = student.email || 'No email provided';
+    
+    const githubContainer = document.getElementById('modal-github-container');
+    const githubLink = document.getElementById('modal-github');
+    if (student.github && student.github.trim() !== '') {
+        const username = student.github.replace(/^@/, '');
+        githubLink.href = `https://github.com/${username}`;
+        githubLink.textContent = `@${username}`;
+        githubContainer.style.display = 'flex';
+    } else {
+        githubContainer.style.display = 'none';
+    }
+    
+    const linkedinContainer = document.getElementById('modal-linkedin-container');
+    const linkedinLink = document.getElementById('modal-linkedin');
+    if (student.linkedin && student.linkedin.trim() !== '') {
+        const username = student.linkedin.replace(/^@/, '').replace(/^in\//, '');
+        linkedinLink.href = `https://linkedin.com/in/${username}`;
+        linkedinLink.textContent = `linkedin.com/in/${username}`;
+        linkedinContainer.style.display = 'flex';
+    } else {
+        linkedinContainer.style.display = 'none';
+    }
+    
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
 }

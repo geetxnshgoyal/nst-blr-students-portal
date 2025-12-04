@@ -387,6 +387,35 @@ body {
     font-size: 14px;
 }
 
+.modal-info a {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.modal-info a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+.social-badge {
+    display: inline-block;
+    font-size: 14px;
+    margin-left: 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.student-card:hover .social-badge {
+    opacity: 1;
+}
+
+.linkedin-badge {
+    margin-left: 2px;
+}
+
 .close {
     position: absolute;
     right: 16px;
