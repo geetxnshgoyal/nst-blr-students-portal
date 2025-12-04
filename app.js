@@ -155,9 +155,9 @@ function showModal(student) {
     const linkedinContainer = document.getElementById('modal-linkedin-container');
     const linkedinLink = document.getElementById('modal-linkedin');
     if (student.linkedin && student.linkedin.trim() !== '') {
-        const username = student.linkedin.replace(/^@/, '').replace(/^in\//, '');
-        linkedinLink.href = `https://linkedin.com/in/${username}`;
-        linkedinLink.textContent = `linkedin.com/in/${username}`;
+        const linkedinUrl = student.linkedin.trim();
+        linkedinLink.href = linkedinUrl;
+        linkedinLink.textContent = linkedinUrl.replace(/^https?:\/\/(www\.)?/, '');
         linkedinContainer.style.display = 'flex';
     } else {
         linkedinContainer.style.display = 'none';
