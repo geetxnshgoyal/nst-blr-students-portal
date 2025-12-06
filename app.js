@@ -76,24 +76,29 @@ function displayStudents(studentsToShow) {
         return;
     }
 
-    studentsToShow.forEach(student => {
+    studentsToShow.forEach((student, index) => {
         const card = document.createElement('div');
         card.className = 'student-card';
+        card.style.animationDelay = `${index * 0.03}s`;
         
-        const githubBadge = (student.github && student.github.trim() !== '') 
-            ? ` <span class="github-badge" title="GitHub: ${student.github}">🔗</span>` 
-            : '';
+        let badges = '';
+        if (student.github && student.github.trim() !== '') {
+            badges += ` <span class="social-badge github-badge" title="GitHub">\ud83d\udd17</span>`;
+        }
+        if (student.linkedin && student.linkedin.trim() !== '') {
+            badges += ` <span class="social-badge linkedin-badge" title="LinkedIn">\ud83d\udcbc</span>`;
+        }
         
         if (student.photo && student.photo.trim() !== '') {
             card.innerHTML = `
                 <img src="${student.photo}" alt="${student.name}" onerror="this.outerHTML='<div class=\\'no-photo\\'>${student.name.charAt(0).toUpperCase()}</div>'">
-                <div class="name">${student.name}${githubBadge}</div>
+                <div class="name">${student.name}${badges}</div>
                 <div class="email">${student.email || 'No email'}</div>
             `;
         } else {
             card.innerHTML = `
                 <div class="no-photo">${student.name.charAt(0).toUpperCase()}</div>
-                <div class="name">${student.name}${githubBadge}</div>
+                <div class="name">${student.name}${badges}</div>
                 <div class="email">${student.email || 'No email'}</div>
             `;
         }
