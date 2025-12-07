@@ -189,8 +189,7 @@ function showModal(student) {
     if (student.github && student.github.trim() !== '') {
         const githubUrl = student.github.trim();
         githubLink.href = githubUrl;
-        githubLink.textContent = 'Visit GitHub Profile';
-        githubContainer.style.display = 'flex';
+        githubContainer.style.display = 'block';
     } else {
         githubContainer.style.display = 'none';
     }
@@ -201,8 +200,7 @@ function showModal(student) {
     if (student.linkedin && student.linkedin.trim() !== '') {
         const linkedinUrl = student.linkedin.trim();
         linkedinLink.href = linkedinUrl;
-        linkedinLink.textContent = 'Visit LinkedIn Profile';
-        linkedinContainer.style.display = 'flex';
+        linkedinContainer.style.display = 'block';
     } else {
         linkedinContainer.style.display = 'none';
     }
