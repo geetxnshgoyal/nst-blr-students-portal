@@ -56,6 +56,7 @@ const modalEmail = document.getElementById('modal-email');
 const modalInstitutionalEmail = document.getElementById('modal-institutional-email');
 const modalUSN = document.getElementById('modal-usn');
 const modalGender = document.getElementById('modal-gender');
+const modalBirthday = document.getElementById('modal-birthday');
 const modalBatchBadge = document.getElementById('modal-batch-badge');
 const closeBtn = document.querySelector('.close-btn');
 const modalOverlay = document.querySelector('.modal-overlay');
@@ -86,7 +87,7 @@ function displayStudents(studentsToShow) {
         const card = document.createElement('div');
         card.className = 'student-card';
         card.style.animationDelay = `${index * 0.03}s`;
-        
+
         let badges = '';
         if (student.github && student.github.trim() !== '') {
             badges += ` <span class="social-badge github-badge" title="GitHub">🔗</span>`;
@@ -94,7 +95,7 @@ function displayStudents(studentsToShow) {
         if (student.linkedin && student.linkedin.trim() !== '') {
             badges += ` <span class="social-badge linkedin-badge" title="LinkedIn">💼</span>`;
         }
-        
+
         if (student.photo && student.photo.trim() !== '') {
             card.innerHTML = `
                 <img src="${student.photo}" alt="${student.name}" onerror="this.outerHTML='<div class=\\'no-photo\\'>${student.name.charAt(0).toUpperCase()}</div>'">
@@ -134,26 +135,26 @@ function applyFiltersAndSort() {
         const github = (student.github || '').toLowerCase();
         const linkedin = (student.linkedin || '').toLowerCase();
         const usn = (student.usn || '').toLowerCase();
-        
-        const matchesSearch = !searchTerm || 
-            name.includes(searchTerm) || 
-            email.includes(searchTerm) || 
-            institutionalEmail.includes(searchTerm) || 
-            github.includes(searchTerm) || 
-            linkedin.includes(searchTerm) || 
+
+        const matchesSearch = !searchTerm ||
+            name.includes(searchTerm) ||
+            email.includes(searchTerm) ||
+            institutionalEmail.includes(searchTerm) ||
+            github.includes(searchTerm) ||
+            linkedin.includes(searchTerm) ||
             usn.includes(searchTerm);
-        
+
         const genderMatch = (genderValue === 'all') || ((student.gender || '').toLowerCase() === genderValue);
         const batchMatch = (batchValue === 'all') || ((student.batch || '') === batchValue);
-        
+
         return matchesSearch && genderMatch && batchMatch;
     });
 
     // Sort
     if (sortValue === 'name-asc') {
-        filtered.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     } else if (sortValue === 'name-desc') {
-        filtered.sort((a,b) => (b.name || '').localeCompare(a.name || ''));
+        filtered.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
     }
 
     displayStudents(filtered);
@@ -170,19 +171,20 @@ function showModal(student) {
     } else {
         modalPhoto.style.display = 'none';
     }
-    
+
     modalName.textContent = student.name || 'Unknown';
     modalEmail.textContent = student.email || 'Not provided';
     modalInstitutionalEmail.textContent = student.institutional_email || 'Not provided';
     modalUSN.textContent = student.usn || 'Not provided';
     modalGender.textContent = (student.gender || 'Not provided').charAt(0).toUpperCase() + (student.gender || 'not provided').slice(1);
-    
+    modalBirthday.textContent = student.birthday || 'Not provided';
+
     if (student.batch && student.batch.trim() !== '') {
         modalBatchBadge.textContent = student.batch;
     } else {
         modalBatchBadge.textContent = 'Unassigned';
     }
-    
+
     // GitHub
     const githubContainer = document.getElementById('modal-github-container');
     const githubLink = document.getElementById('modal-github');
@@ -193,7 +195,7 @@ function showModal(student) {
     } else {
         githubContainer.style.display = 'none';
     }
-    
+
     // LinkedIn
     const linkedinContainer = document.getElementById('modal-linkedin-container');
     const linkedinLink = document.getElementById('modal-linkedin');
@@ -204,7 +206,7 @@ function showModal(student) {
     } else {
         linkedinContainer.style.display = 'none';
     }
-    
+
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 }
