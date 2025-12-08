@@ -37,10 +37,3 @@ Visit `http://localhost:8080` in your browser.
 
 ## 🔒 Security Note
 This application uses simple client-side authentication for demonstration purposes. For production use, it is highly recommended to integrate a backend service (like Firebase authentication) and move sensitive data to a secure database.
-
-## 🎨 Design
-Built with a modern **Glassmorphism** aesthetic, featuring:
-- Dark Mode by default
-- Blur effects and translucent panels
-- Responsive sidebar navigation
-- Smooth animations and transitions
