@@ -1,78 +1,46 @@
-# Student Directory 🎓
+# Student Portal 🎓
 
-A secure, professional student directory web application with password protection.
+A modern, secure student portal featuring a dashboard, student directory, and academic tools.
 
-## Features
+## ✨ Features
 
-- 🔒 **Password Protection** - Secure access to student data
-- 🔍 **Smart Search** - Search by name or email
-- 📱 **Responsive Design** - Works on all devices
-- 🎨 **Modern UI** - Clean, professional interface
-- 🖼️ **Photo Grid** - Easy visual browsing
+### 🖥️ Dashboard
+- **Welcome Hub**: Personalized greeting and quick stats.
+- **🎂 Upcoming Birthdays**: View students with birthdays in the next 30 days.
+- **📊 Quick Stats**: Real-time student count and date.
 
-## Setup
+### 👥 Student Directory
+- **Smart Search**: Filter by name, USN, email, or batch.
+- **Detailed Profiles**: Click any student to view their full profile in a glassmorphic modal.
+- **Social Links**: Direct access to GitHub and LinkedIn profiles.
 
-### 1. Change Default Password
+### 🚀 Upcoming Modules
+- 📅 **Timetable** (Coming Soon)
+- 📝 **Exams** (Coming Soon)
+- 📚 **Syllabus** (Coming Soon)
 
-Edit `app.js` and change the password:
-```javascript
-const PASSWORD = "your-secure-password-here";
-```
+## 🛠️ Setup & Usage
 
-### 2. Deploy
-
-Deploy to Vercel, Netlify, or any static hosting service.
-
-## Privacy & Security
-
-### Important Privacy Considerations
-
-⚠️ **WARNING**: Photos and email addresses are stored locally in this repository and will be publicly accessible if deployed to a public hosting service.
-
-### Recommendations for Enhanced Privacy
-
-1. **Use a Private Repository**
-   - Keep your GitHub repo private
-   - Only share access with authorized users
-
-2. **Use Environment Variables**
-   - Store sensitive data in environment variables
-   - Use a backend API for student data
-
-3. **Image Storage Options**
-   - Use cloud storage with access control (AWS S3, Cloudflare R2)
-   - Implement authentication on image requests
-   - Use signed URLs with expiration
-
-4. **Alternative: Move to Backend**
-   For better security, consider:
-   - Node.js + Express backend
-   - Database (MongoDB/PostgreSQL)
-   - JWT authentication
-   - Image upload to secure cloud storage
-
-## Password
-
-Default password: `svyasa2024`
-
-**⚠️ Change this immediately after deployment!**
-
-## Usage
-
-1. Enter password on login screen
-2. Search for students by name or email
-3. Click any student card to view details
-4. Logout when done
-
-## Development
+### 1. Installation
+No complex installation required. Just clone and serve.
 
 ```bash
 # Start local server
 python3 -m http.server 8080
 ```
 
-Visit: `http://localhost:8080`
+### 2. Access
+Visit `http://localhost:8080` in your browser.
 
-## License
+- **Default Password**: `12345678@`
+- *Note: Please change this password in `app.js` line 2 for security.*
 
-Private use only - SVYASA
+## 🔒 Security Note
+This application uses simple client-side authentication for demonstration purposes. For production use, it is highly recommended to integrate a backend service (like Firebase authentication) and move sensitive data to a secure database.
+
+## 🎨 Design
+Built with a modern **Glassmorphism** aesthetic, featuring:
+- Dark Mode by default
+- Blur effects and translucent panels
+- Responsive sidebar navigation
+- Smooth animations and transitions
