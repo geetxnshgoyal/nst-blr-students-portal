@@ -335,6 +335,12 @@ h6 {
     gap: 1rem;
 }
 
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
 .brand-text {
     font-size: 1.5rem;
     font-weight: 800;
@@ -387,7 +393,8 @@ h6 {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 160px 20px 40px 20px;
+    padding: 100px 20px 40px 20px;
+    transition: padding 0.3s ease;
 }
 
 .search-section {
@@ -791,7 +798,8 @@ h6 {
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
     .container {
-        padding: 24px 16px;
+        padding: 90px 16px 24px 16px;
+        margin-top: 0;
     }
 
     .section-title {
@@ -799,12 +807,40 @@ h6 {
         margin-bottom: 1.5rem;
     }
 
-    .nav-container {
+    .navbar {
         padding: 0.8rem 1rem;
+    }
+
+    .nav-container {
+        padding: 0;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .nav-brand {
+        gap: 0.5rem;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .nav-actions {
+        width: 100%;
+        gap: 0.5rem;
+        justify-content: space-between;
     }
 
     .brand-text {
         font-size: 1.2rem;
+    }
+
+    .student-count {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    .logout-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
     }
 
     /* Stack Search & Filters */
