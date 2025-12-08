@@ -425,11 +425,11 @@
         "gender": "male",
         "photo": "photos/apish.png",
         "batch": "Batch 2",
-        "github": "",
-        "linkedin": "",
+        "github": "https://github.com/Apishrana",
+        "linkedin": "https://www.linkedin.com/in/apish-rana-519139375/",
         "usn": "2102508715",
-        "institutional_email": "102508715@svyasa-sas.edu.in",
-        "birthday": ""
+        "institutional_email": "2102508715@svyasa-sas.edu.in",
+        "birthday": "23-11-2007"
     },
     {
         "name": "Mohd Faizan Khan",
