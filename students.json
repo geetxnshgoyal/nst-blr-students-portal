@@ -425,11 +425,11 @@
         "gender": "male",
         "photo": "photos/apish.png",
         "batch": "Batch 2",
-        "github": "",
-        "linkedin": "",
+        "github": "https://github.com/Apishrana",
+        "linkedin": "https://www.linkedin.com/in/apish-rana-519139375/",
         "usn": "2102508715",
-        "institutional_email": "102508715@svyasa-sas.edu.in",
-        "birthday": ""
+        "institutional_email": "2102508715@svyasa-sas.edu.in",
+        "birthday": "23-11-2007"
     },
     {
         "name": "Mohd Faizan Khan",
@@ -889,15 +889,15 @@
     },
     {
         "name": "Divyanshu Prakash",
-        "email": "",
+        "email": "divyanshuprakash914@gmail.com",
         "photo": "",
         "gender": "male",
         "batch": "Batch 2",
-        "github": "",
-        "linkedin": "",
+        "github": "https://github.com/2102508744-png/",
+        "linkedin": "https://www.linkedin.com/in/divyanshu-prakash-023511388/",
         "usn": "2102508744",
         "institutional_email": "2102508744@svyasa-sas.edu.in",
-        "birthday": ""
+        "birthday": "11-11-2006"
     },
     {
         "name": "Chavi Makana",
