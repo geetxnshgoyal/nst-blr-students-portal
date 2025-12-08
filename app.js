@@ -243,4 +243,24 @@ genderFilter.addEventListener('change', () => applyFiltersAndSort());
 batchFilter.addEventListener('change', () => applyFiltersAndSort());
 sortSelect.addEventListener('change', () => applyFiltersAndSort());
 
+// Navbar scroll hide/show functionality
+let lastScrollTop = 0;
+const navbar = document.querySelector('.navbar');
+
+window.addEventListener('scroll', () => {
+    let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+    
+    if (currentScroll > lastScrollTop && currentScroll > 100) {
+        // Scrolling DOWN - hide navbar
+        navbar.style.transform = 'translateY(-100%)';
+        navbar.style.transition = 'transform 0.3s ease';
+    } else {
+        // Scrolling UP - show navbar
+        navbar.style.transform = 'translateY(0)';
+        navbar.style.transition = 'transform 0.3s ease';
+    }
+    
+    lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+});
+
 console.log("🎓 Student Directory Loaded! 👋");
