@@ -2,3 +2,4 @@
 *.log
 node_modules/
 missing_photos.csv
+abc.txt
