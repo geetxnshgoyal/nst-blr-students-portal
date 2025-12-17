@@ -1,6 +1,12 @@
-// Password protection
-const PASSWORD = "12345678@";
+// Secure Authentication System
+// Password hash (SHA-256 of the password) - password is NOT stored in plaintext
+const PASSWORD_HASH = "b68caccd2ed99da69f9aac1a26606fbf1ca7e327e4894c0efc5fbfceb5f6ab94"; // Hash of ""
+
+// Session security - generates a unique token that can't be easily forged
+const SESSION_SECRET = Date.now().toString(36) + Math.random().toString(36).substring(2);
+
 let isAuthenticated = false;
+let students = [];
 
 const authScreen = document.getElementById('auth-screen');
 const mainContent = document.getElementById('main-content');
@@ -9,15 +15,63 @@ const passwordInput = document.getElementById('password-input');
 const authError = document.getElementById('auth-error');
 const logoutBtn = document.getElementById('logout-btn');
 
-// Check if already authenticated
-if (sessionStorage.getItem('authenticated') === 'true') {
+// SHA-256 hash function
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Generate secure session token
+function generateSessionToken() {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+    return btoa(JSON.stringify({ t: timestamp, r: random, s: SESSION_SECRET }));
+}
+
+// Validate session token
+function isValidSession() {
+    try {
+        const token = sessionStorage.getItem('session_token');
+        if (!token) return false;
+        
+        const decoded = JSON.parse(atob(token));
+        // Check if token was created in this session (has correct secret)
+        if (decoded.s !== SESSION_SECRET) return false;
+        
+        // Check if token is not too old (24 hour expiry)
+        const ageMs = Date.now() - decoded.t;
+        if (ageMs > 24 * 60 * 60 * 1000) return false;
+        
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Clear any insecure legacy storage
+sessionStorage.removeItem('authenticated');
+localStorage.removeItem('authenticated');
+localStorage.removeItem('password');
+
+// Check if already authenticated with valid token
+if (isValidSession()) {
     showMainContent();
 }
 
-authForm.addEventListener('submit', (e) => {
+authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (passwordInput.value === PASSWORD) {
-        sessionStorage.setItem('authenticated', 'true');
+    
+    const enteredPassword = passwordInput.value;
+    const enteredHash = await hashPassword(enteredPassword);
+    
+    if (enteredHash === PASSWORD_HASH) {
+        // Create secure session token
+        const token = generateSessionToken();
+        sessionStorage.setItem('session_token', token);
+        isAuthenticated = true;
         showMainContent();
     } else {
         authError.textContent = 'Incorrect password';
@@ -27,21 +81,30 @@ authForm.addEventListener('submit', (e) => {
 });
 
 logoutBtn.addEventListener('click', () => {
-    sessionStorage.removeItem('authenticated');
+    sessionStorage.removeItem('session_token');
+    isAuthenticated = false;
+    students = []; // Clear data from memory
     authScreen.classList.remove('hidden');
     mainContent.classList.add('hidden');
     passwordInput.value = '';
+    // Clear the grid
+    document.getElementById('student-grid').innerHTML = '';
 });
 
 function showMainContent() {
+    if (!isValidSession()) {
+        // Double-check authentication
+        authScreen.classList.remove('hidden');
+        mainContent.classList.add('hidden');
+        return;
+    }
+    isAuthenticated = true;
     authScreen.classList.add('hidden');
     mainContent.classList.remove('hidden');
     loadStudents();
 }
 
 // Student Directory App
-let students = [];
-
 const studentGrid = document.getElementById('student-grid');
 const searchInput = document.getElementById('search');
 const searchClear = document.getElementById('search-clear');
@@ -61,8 +124,13 @@ const modalBatchBadge = document.getElementById('modal-batch-badge');
 const closeBtn = document.querySelector('.close-btn');
 const modalOverlay = document.querySelector('.modal-overlay');
 
-// Load students from JSON file
+// Load students from JSON file (only if authenticated)
 async function loadStudents() {
+    if (!isValidSession()) {
+        console.error('Unauthorized access attempt');
+        return;
+    }
+    
     try {
         const response = await fetch('students.json');
         students = await response.json();
@@ -75,6 +143,8 @@ async function loadStudents() {
 
 // Display students in grid
 function displayStudents(studentsToShow) {
+    if (!isValidSession()) return;
+    
     studentGrid.innerHTML = '';
     studentCount.textContent = `${studentsToShow.length} Student${studentsToShow.length !== 1 ? 's' : ''}`;
 
@@ -116,6 +186,8 @@ function displayStudents(studentsToShow) {
 }
 
 function applyFiltersAndSort() {
+    if (!isValidSession()) return;
+    
     const searchTerm = searchInput.value.toLowerCase().trim();
     const genderValue = genderFilter.value;
     const batchValue = batchFilter.value;
@@ -162,6 +234,8 @@ function applyFiltersAndSort() {
 
 // Show modal with student details
 function showModal(student) {
+    if (!isValidSession()) return;
+    
     if (student.photo && student.photo.trim() !== '') {
         modalPhoto.src = student.photo;
         modalPhoto.style.display = 'block';
@@ -263,4 +337,17 @@ window.addEventListener('scroll', () => {
     lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
 });
 
-console.log("🎓 Student Directory Loaded! 👋");
+// Prevent DevTools localStorage/sessionStorage manipulation detection
+// Periodically verify session integrity
+setInterval(() => {
+    if (mainContent && !mainContent.classList.contains('hidden')) {
+        if (!isValidSession()) {
+            // Session was tampered with - force logout
+            sessionStorage.clear();
+            students = [];
+            authScreen.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+            studentGrid.innerHTML = '';
+        }
+    }
+}, 5000);
