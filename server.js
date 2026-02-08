@@ -191,11 +191,11 @@ const portalLimiter = rateLimit({
     message: { error: 'Rate limit exceeded' },
 });
 
-// OTP Rate Limiter - STRICT
+// OTP Rate Limiter - Relaxed to allow multiple users (classroom scenario)
 const otpRequestLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 2, // Max 2 requests per minute blocking by IP
-    message: { error: 'Too many requests. Please wait a minute.' },
+    max: 100, // Allow 100 requests per minute per IP (prevents IP blocking)
+    message: { error: 'Too many requests from this IP. Please wait a minute.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -343,9 +343,9 @@ app.post('/api/portal/student/:usn/request-otp', otpRequestLimiter, async (req, 
         const existingOTP = otpStore.get(usn);
         if (existingOTP) {
             const timeSinceCreated = Date.now() - (existingOTP.expiresAt - 10 * 60 * 1000);
-            // If requested less than 60 seconds ago, BLOCK IT
-            if (timeSinceCreated < 60 * 1000) {
-                const waitSeconds = Math.ceil((60 * 1000 - timeSinceCreated) / 1000);
+            // If requested less than 30 seconds ago, BLOCK IT
+            if (timeSinceCreated < 30 * 1000) {
+                const waitSeconds = Math.ceil((30 * 1000 - timeSinceCreated) / 1000);
                 return res.status(429).json({
                     error: `Please wait ${waitSeconds}s before sending another code`
                 });
