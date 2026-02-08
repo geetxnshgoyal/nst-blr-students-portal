@@ -438,6 +438,27 @@ app.post('/api/portal/student/:usn/verify-otp', portalLimiter, async (req, res) 
     }
 });
 
+// ===== Audit Logging Helper =====
+async function logAudit(usn, action, changes, req) {
+    try {
+        if (!firebaseInitialized || !db) return;
+
+        const logEntry = {
+            usn,
+            action,
+            changes,
+            ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+            userAgent: req.headers['user-agent'] || 'Unknown',
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        };
+
+        await db.collection('audit_logs').add(logEntry);
+        console.log(`📝 Audit log created for ${usn}: ${action}`);
+    } catch (error) {
+        console.error('Audit logging failed:', error);
+    }
+}
+
 // Update student profile (requires OTP verification)
 app.patch('/api/portal/student/:usn', portalLimiter, async (req, res) => {
     try {
@@ -468,6 +489,9 @@ app.patch('/api/portal/student/:usn', portalLimiter, async (req, res) => {
         const allowedFields = ['github', 'linkedin', 'email', 'birthday'];
         const sanitizedUpdates = {};
 
+        // Track what actually changed for the log
+        const changes = {};
+
         for (const field of allowedFields) {
             if (updates[field] !== undefined) {
                 let value = String(updates[field]).trim();
@@ -486,6 +510,7 @@ app.patch('/api/portal/student/:usn', portalLimiter, async (req, res) => {
                 }
 
                 sanitizedUpdates[field] = value;
+                changes[field] = value;
             }
         }
 
@@ -502,6 +527,9 @@ app.patch('/api/portal/student/:usn', portalLimiter, async (req, res) => {
 
         sanitizedUpdates.updatedAt = admin.firestore.FieldValue.serverTimestamp();
         await studentRef.update(sanitizedUpdates);
+
+        // LOG THE ACTION
+        await logAudit(usn, 'UPDATE_PROFILE', changes, req);
 
         res.json({ success: true, message: 'Profile updated successfully' });
     } catch (error) {
@@ -559,6 +587,9 @@ app.post('/api/portal/student/:usn/photo', uploadLimiter, upload.single('photo')
             photo: base64Photo,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
+
+        // LOG THE ACTION
+        await logAudit(usn, 'UPDATE_PHOTO', { photo_size: req.file.size }, req);
 
         res.json({ success: true, photoUrl: base64Photo });
     } catch (error) {
