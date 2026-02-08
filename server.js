@@ -47,19 +47,33 @@ if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     console.warn('⚠️ SMTP not configured - OTP will be logged to console');
 }
 
+// Helper to get base64 logo
+function getBase64Logo() {
+    try {
+        const logoPath = path.join(__dirname, 'public', 'favicon.png');
+        if (fs.existsSync(logoPath)) {
+            const image = fs.readFileSync(logoPath);
+            return `data:image/png;base64,${image.toString('base64')}`;
+        }
+    } catch (e) {
+        console.error('Error loading logo:', e);
+    }
+    return '';
+}
+
 async function sendOTP(email, otp, studentName) {
     const subject = 'NST Student Portal - Verification Code';
-    // You can set LOGO_URL in .env to your hosted logo, e.g., https://yoursite.com/logo.png
-    const logoUrl = process.env.LOGO_URL || '';
-    const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="NST" style="width: 60px; height: 60px; margin-bottom: 10px;">` : '';
+    const logoDataUrl = getBase64Logo();
+    const logoHtml = logoDataUrl ? `<img src="${logoDataUrl}" alt="NST Logo" style="width: 64px; height: 64px; margin-bottom: 16px; border-radius: 12px;">` : '';
 
     const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; background: #ffffff; border-radius: 16px;">
-            <div style="text-align: center; margin-bottom: 20px;">
-                ${logoHtml}
-                <h2 style="color: #8b5cf6; margin: 0; font-size: 24px;">NST Student Portal</h2>
-                <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Newton School of Technology, Bangalore</p>
-            </div>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 40px 20px; background-color: #f9fafb;">
+            <div style="background: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    ${logoHtml}
+                    <h2 style="color: #6d28d9; margin: 0; font-size: 24px; font-weight: 700;">NST Student Portal</h2>
+                    <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px;">Secure Verified Access</p>
+                </div>
             <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin: 20px 0;">
                 <p style="color: #374151; margin: 0 0 10px 0;">Hello <strong>${studentName}</strong>,</p>
                 <p style="color: #374151; margin: 0;">Your verification code to update your profile is:</p>
