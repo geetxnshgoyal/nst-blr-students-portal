@@ -177,11 +177,11 @@ const portalLimiter = rateLimit({
     message: { error: 'Rate limit exceeded' },
 });
 
-// OTP Rate Limiter - strict limits to prevent abuse
+// OTP Rate Limiter - STRICT
 const otpRequestLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 2, // Maximum 2 OTP requests per minute per IP
-    message: { error: 'Please wait before requesting another code' },
+    windowMs: 60 * 1000,
+    max: 2, // Max 2 requests per minute blocking by IP
+    message: { error: 'Too many requests. Please wait a minute.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -317,13 +317,27 @@ app.get('/api/portal/student/:usn', portalLimiter, async (req, res) => {
 });
 
 // Request OTP
-app.post('/api/portal/student/:usn/request-otp', portalLimiter, async (req, res) => {
+app.post('/api/portal/student/:usn/request-otp', otpRequestLimiter, async (req, res) => {
     try {
         const { usn } = req.params;
 
         if (!isValidUSN(usn)) {
             return res.status(400).json({ error: 'Invalid USN format' });
         }
+
+        // Check if OTP already exists and enforce COOLDOWN
+        const existingOTP = otpStore.get(usn);
+        if (existingOTP) {
+            const timeSinceCreated = Date.now() - (existingOTP.expiresAt - 10 * 60 * 1000);
+            // If requested less than 60 seconds ago, BLOCK IT
+            if (timeSinceCreated < 60 * 1000) {
+                const waitSeconds = Math.ceil((60 * 1000 - timeSinceCreated) / 1000);
+                return res.status(429).json({
+                    error: `Please wait ${waitSeconds}s before sending another code`
+                });
+            }
+        }
+
 
         if (!firebaseInitialized || !db) {
             return res.status(503).json({ error: 'Database not available' });

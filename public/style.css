@@ -907,16 +907,22 @@ body {
     display: flex;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+    /* Allow wrapping on very small screens */
 }
 
 .otp-input-group input {
     flex: 1;
+    min-width: 120px;
+    /* Ensure input doesn't get too small */
     padding: var(--spacing-md);
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+    /* Slightly smaller to fit better */
     font-family: 'Outfit', monospace;
     font-weight: 700;
     text-align: center;
-    letter-spacing: 0.4em;
+    letter-spacing: 0.2em;
+    /* Reduced spacing to prevent overflow */
     background: var(--bg-input);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-md);
