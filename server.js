@@ -258,26 +258,87 @@ app.use(express.static(path.join(__dirname, 'public'), {
     dotfiles: 'deny'
 }));
 
+const ADMIN_EMAIL = 'goyalgeetansh@gmail.com';
+
+// Admin Auth Middleware
+function authenticateAdmin(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Access denied' });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err || user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+        req.user = user;
+        next();
+    });
+}
+
 // ===== Admin API Routes =====
 
-app.post('/api/login', authLimiter, async (req, res) => {
+// 1. Request Admin OTP
+app.post('/api/admin/login', authLimiter, async (req, res) => {
     try {
-        const { password } = req.body;
-        if (!password) return res.status(400).json({ error: 'Password required' });
-        const isValid = await bcrypt.compare(password, storedPasswordHash);
-        if (!isValid) {
-            await new Promise(r => setTimeout(r, 1000));
-            return res.status(401).json({ error: 'Invalid password' });
-        }
-        const token = jwt.sign({ a: true, t: Date.now() }, JWT_SECRET, { expiresIn: '1h' });
-        res.json({ success: true, token });
+        const otp = crypto.randomInt(100000, 999999).toString();
+
+        // Store OTP for Admin
+        otpStore.set('ADMIN', {
+            otp,
+            email: ADMIN_EMAIL,
+            expiresAt: Date.now() + 5 * 60 * 1000, // 5 mins
+            verified: false
+        });
+
+        await sendOTP(ADMIN_EMAIL, otp, 'Administrator');
+
+        // Return masked email
+        const masked = ADMIN_EMAIL.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+        res.json({ success: true, message: `OTP sent to ${masked}` });
     } catch (e) {
+        console.error('Admin login error:', e);
         res.status(500).json({ error: 'Server error' });
     }
 });
 
-app.get('/api/verify', authenticateToken, (req, res) => {
-    res.json({ valid: true });
+// 2. Verify Admin OTP
+app.post('/api/admin/verify', authLimiter, (req, res) => {
+    const { otp } = req.body;
+    const stored = otpStore.get('ADMIN');
+
+    if (!stored) return res.status(400).json({ error: 'No OTP requested' });
+    if (stored.expiresAt < Date.now()) {
+        otpStore.delete('ADMIN');
+        return res.status(400).json({ error: 'OTP expired' });
+    }
+    if (stored.otp !== otp.trim()) return res.status(400).json({ error: 'Invalid OTP' });
+
+    // Success - Issue Admin Token
+    otpStore.delete('ADMIN');
+    const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ success: true, token });
+});
+
+// 3. Get All Students (Protected)
+app.get('/api/admin/students', authenticateAdmin, async (req, res) => {
+    try {
+        if (!firebaseInitialized || !db) return res.status(503).json({ error: 'Database unavailable' });
+
+        const snapshot = await db.collection('students').get();
+        const students = [];
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            students.push({
+                usn: doc.id,
+                ...data
+            });
+        });
+
+        res.json({ success: true, students });
+    } catch (e) {
+        console.error('Admin fetch error:', e);
+        res.status(500).json({ error: 'Failed to fetch students' });
+    }
 });
 
 // ===== Student Portal API =====
