@@ -138,19 +138,32 @@ async function requestOTP(usn) {
 }
 
 async function verifyOTP(usn, otp) {
-    const response = await fetch(`/api/portal/student/${usn}/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ otp })
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    const data = await response.json();
+    try {
+        const response = await fetch(`/api/portal/student/${usn}/verify-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ otp }),
+            signal: controller.signal
+        });
 
-    if (!response.ok) {
-        throw new Error(data.error || 'Verification failed');
+        clearTimeout(timeoutId);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Verification failed');
+        }
+
+        return data;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('Verification timed out. Please try again.');
+        }
+        throw error;
     }
-
-    return data;
 }
 
 // ===== API Functions =====
@@ -398,8 +411,13 @@ verifyOtpBtn.addEventListener('click', async () => {
 
     } catch (error) {
         showOtpError(error.message);
+    } finally {
         verifyOtpBtn.disabled = false;
-        verifyOtpBtn.querySelector('span').textContent = 'Verify';
+        if (verifyOtpBtn.querySelector('span')) {
+            verifyOtpBtn.querySelector('span').textContent = 'Verify';
+        } else {
+            verifyOtpBtn.textContent = 'Verify';
+        }
     }
 });
 
@@ -425,14 +443,10 @@ resendOtpBtn.addEventListener('click', async () => {
     }
 });
 
-// OTP Input - auto submit on 6 digits
+// OTP Input - format input
 otpInput.addEventListener('input', (e) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
     e.target.value = value;
-
-    if (value.length === 6) {
-        verifyOtpBtn.click();
-    }
 });
 
 // Photo Upload
