@@ -984,6 +984,41 @@ body {
     margin-bottom: var(--spacing-md);
 }
 
+/* Verify Card (right column) */
+.verify-card {
+    padding: var(--spacing-xl);
+    height: fit-content;
+}
+
+.verify-card h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.verify-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: var(--spacing-lg);
+}
+
+.card-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.glass-card:hover .card-glow {
+    opacity: 1;
+}
+
 #otp-error {
     margin-top: var(--spacing-lg);
 }

@@ -49,22 +49,37 @@ if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
 
 async function sendOTP(email, otp, studentName) {
     const subject = 'NST Student Portal - Verification Code';
+    // You can set LOGO_URL in .env to your hosted logo, e.g., https://yoursite.com/logo.png
+    const logoUrl = process.env.LOGO_URL || '';
+    const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="NST" style="width: 60px; height: 60px; margin-bottom: 10px;">` : '';
+
     const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #8b5cf6;">NST Student Portal</h2>
-            <p>Hello ${studentName},</p>
-            <p>Your verification code to update your profile is:</p>
-            <div style="background: #f3f4f6; padding: 20px; text-align: center; border-radius: 10px; margin: 20px 0;">
-                <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1f2937;">${otp}</span>
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; background: #ffffff; border-radius: 16px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                ${logoHtml}
+                <h2 style="color: #8b5cf6; margin: 0; font-size: 24px;">NST Student Portal</h2>
+                <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Newton School of Technology, Bangalore</p>
             </div>
-            <p>This code will expire in <strong>10 minutes</strong>.</p>
-            <p style="color: #6b7280; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+            <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin: 20px 0;">
+                <p style="color: #374151; margin: 0 0 10px 0;">Hello <strong>${studentName}</strong>,</p>
+                <p style="color: #374151; margin: 0;">Your verification code to update your profile is:</p>
+            </div>
+            <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 25px; text-align: center; border-radius: 12px; margin: 20px 0;">
+                <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #ffffff;">${otp}</span>
+            </div>
+            <div style="text-align: center; color: #6b7280; font-size: 14px;">
+                <p style="margin: 0;">This code will expire in <strong>10 minutes</strong>.</p>
+                <p style="margin: 15px 0 0 0; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+            </div>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #9ca3af;">
+                <p style="margin: 0;">© ${new Date().getFullYear()} NST Bangalore. All rights reserved.</p>
+            </div>
         </div>
     `;
 
     if (transporter) {
         await transporter.sendMail({
-            from: process.env.SMTP_FROM || 'noreply@nst-portal.com',
+            from: process.env.SMTP_FROM || 'NST Student Portal <noreply@nst-portal.com>',
             to: email,
             subject,
             html,
@@ -146,6 +161,23 @@ const portalLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 30,
     message: { error: 'Rate limit exceeded' },
+});
+
+// OTP Rate Limiter - strict limits to prevent abuse
+const otpRequestLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 2, // Maximum 2 OTP requests per minute per IP
+    message: { error: 'Please wait before requesting another code' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const otpVerifyLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Maximum 10 verify attempts per 15 minutes
+    message: { error: 'Too many verification attempts. Please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
 });
 
 const uploadLimiter = rateLimit({
