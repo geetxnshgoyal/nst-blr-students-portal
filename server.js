@@ -63,8 +63,20 @@ function getBase64Logo() {
 
 async function sendOTP(email, otp, studentName) {
     const subject = 'NST Student Portal - Verification Code';
-    const logoDataUrl = getBase64Logo();
-    const logoHtml = logoDataUrl ? `<img src="${logoDataUrl}" alt="NST Logo" style="width: 64px; height: 64px; margin-bottom: 16px; border-radius: 12px;">` : '';
+    const logoPath = path.join(__dirname, 'public', 'logo.png');
+
+    // Prepare attachment if file exists
+    const attachments = [];
+    let logoHtml = '';
+
+    if (fs.existsSync(logoPath)) {
+        attachments.push({
+            filename: 'logo.png',
+            path: logoPath,
+            cid: 'nstlogo' // same cid value as in the html img src
+        });
+        logoHtml = `<img src="cid:nstlogo" alt="NST Logo" style="width: 64px; height: 64px; margin-bottom: 16px; border-radius: 12px;">`;
+    }
 
     const html = `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 40px 20px; background-color: #f9fafb;">
@@ -74,19 +86,20 @@ async function sendOTP(email, otp, studentName) {
                     <h2 style="color: #6d28d9; margin: 0; font-size: 24px; font-weight: 700;">NST Student Portal</h2>
                     <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px;">Secure Verified Access</p>
                 </div>
-            <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin: 20px 0;">
-                <p style="color: #374151; margin: 0 0 10px 0;">Hello <strong>${studentName}</strong>,</p>
-                <p style="color: #374151; margin: 0;">Your verification code to update your profile is:</p>
-            </div>
-            <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 25px; text-align: center; border-radius: 12px; margin: 20px 0;">
-                <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #ffffff;">${otp}</span>
-            </div>
-            <div style="text-align: center; color: #6b7280; font-size: 14px;">
-                <p style="margin: 0;">This code will expire in <strong>10 minutes</strong>.</p>
-                <p style="margin: 15px 0 0 0; font-size: 12px;">If you didn't request this, please ignore this email.</p>
-            </div>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #9ca3af;">
-                <p style="margin: 0;">© ${new Date().getFullYear()} NST Bangalore. All rights reserved.</p>
+                <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin: 20px 0;">
+                    <p style="color: #374151; margin: 0 0 10px 0; font-size: 16px;">Hello <strong>${studentName}</strong>,</p>
+                    <p style="color: #374151; margin: 0; font-size: 16px;">Your verification code to update your profile is:</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 25px; text-align: center; border-radius: 12px; margin: 20px 0;">
+                    <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">${otp}</span>
+                </div>
+                <div style="text-align: center; color: #6b7280; font-size: 14px;">
+                    <p style="margin: 0;">This code will expire in <strong>10 minutes</strong>.</p>
+                    <p style="margin: 15px 0 0 0; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+                </div>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #9ca3af;">
+                    <p style="margin: 0;">© ${new Date().getFullYear()} NST Bangalore. All rights reserved.</p>
+                </div>
             </div>
         </div>
     `;
@@ -97,6 +110,7 @@ async function sendOTP(email, otp, studentName) {
             to: email,
             subject,
             html,
+            attachments, // Add attachments here
         });
         console.log(`📧 OTP sent to ${email}`);
     } else {
