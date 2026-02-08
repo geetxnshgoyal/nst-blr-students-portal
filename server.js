@@ -12,8 +12,20 @@ const JWT_SECRET = process.env.JWT_SECRET || require('crypto').randomBytes(64).t
 
 let storedPasswordHash = null;
 
+// Password configuration: prefer a pre-hashed value (PASSWORD_HASH), else use PASSWORD (plaintext) or a safe default for local dev.
+const DEFAULT_PASSWORD = process.env.PASSWORD || '12345678';
+const PASSWORD_HASH_ENV = process.env.PASSWORD_HASH || null;
+
 (async () => {
-    storedPasswordHash = await bcrypt.hash('12345678@', 12);
+    if (PASSWORD_HASH_ENV) {
+        // Use provided hash directly (must be a bcrypt hash)
+        storedPasswordHash = PASSWORD_HASH_ENV;
+    } else {
+        storedPasswordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
+        if (!process.env.PASSWORD) {
+            console.warn('⚠️ No PASSWORD env set — using default password "12345678" for local development. Set PASSWORD or PASSWORD_HASH for production.');
+        }
+    }
 })();
 
 app.use(helmet({
