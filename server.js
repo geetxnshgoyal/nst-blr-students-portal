@@ -273,6 +273,11 @@ function authenticateAdmin(req, res, next) {
     });
 }
 
+// ===== Admin UI Route =====
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // ===== Admin API Routes =====
 
 // 1. Request Admin OTP
