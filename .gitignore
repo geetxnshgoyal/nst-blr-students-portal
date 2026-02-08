@@ -3,3 +3,13 @@
 node_modules/
 missing_photos.csv
 .abc.txt
+
+# Environment variables - NEVER commit
+.env
+.env.local
+.env.production
+
+# Firebase service account keys - NEVER commit
+*-firebase-adminsdk-*.json
+serviceAccountKey.json
+firebase-admin-*.json
