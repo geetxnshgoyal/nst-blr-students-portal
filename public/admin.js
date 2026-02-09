@@ -178,7 +178,10 @@ function renderStudents(students) {
         <div class="student-card" onclick="openStudentModal('${s.usn}')" style="cursor: pointer;">
             <img src="${s.photo || 'https://via.placeholder.com/60'}" class="mini-photo" alt="${s.name}">
             <div class="student-info">
-                <h4>${s.name || 'Unknown Name'}</h4>
+                <h4>
+                    ${s.name || 'Unknown Name'} 
+                    ${s.status === 'left' ? '<span style="color:var(--error); font-size:0.8em; margin-left:5px;">(Left Batch)</span>' : ''}
+                </h4>
                 <p>${s.usn}</p>
                 <div style="font-size: 0.8rem; color: var(--primary-500); margin-top: 4px;">
                     ${s.email || 'No Email'}
@@ -192,37 +195,56 @@ function renderStudents(students) {
 
 function checkBirthdays() {
     const today = new Date();
-    const nextWeek = new Date();
-    nextWeek.setDate(today.getDate() + 7);
+    today.setHours(0, 0, 0, 0);
 
-    const upcoming = allStudents.filter(s => {
-        if (!s.birthday) return false;
-        const [day, month] = s.birthday.split('-'); // Format: DD-MM-YYYY
-        if (!day || !month) return false;
+    // Get all students with birthdays and calculate their next occurrence
+    const withBirthdays = allStudents
+        .filter(s => s.status !== 'left' && s.birthday)
+        .map(s => {
+            const parts = s.birthday.split('-');
+            if (parts.length < 2) return null;
 
-        const bdayThisYear = new Date(today.getFullYear(), parseInt(month) - 1, parseInt(day));
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
 
-        // Handle year wrap-around (e.g., Dec to Jan)
-        if (bdayThisYear < today) {
-            bdayThisYear.setFullYear(today.getFullYear() + 1);
-        }
+            if (isNaN(day) || isNaN(month)) return null;
 
-        return bdayThisYear >= today && bdayThisYear <= nextWeek;
-    });
+            // Calculate next birthday occurrence
+            let nextBday = new Date(today.getFullYear(), month - 1, day);
 
-    if (upcoming.length > 0) {
+            // If birthday already passed this year, use next year
+            if (nextBday < today) {
+                nextBday.setFullYear(today.getFullYear() + 1);
+            }
+
+            // Calculate days until birthday
+            const daysUntil = Math.ceil((nextBday - today) / (1000 * 60 * 60 * 24));
+
+            return {
+                ...s,
+                nextBday,
+                daysUntil,
+                displayDate: `${day}/${month}`
+            };
+        })
+        .filter(s => s !== null)
+        .sort((a, b) => a.nextBday - b.nextBday); // Sort by upcoming date
+
+    if (withBirthdays.length > 0) {
         birthdaysSection.classList.remove('hidden');
-        birthdaysGrid.innerHTML = upcoming.map(s => `
+        birthdaysGrid.innerHTML = withBirthdays.map(s => `
             <div class="birthday-card" onclick="openStudentModal('${s.usn}')" style="cursor: pointer;">
                 <img src="${s.photo || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px;">
                 <div style="font-weight:600; font-size:0.9rem;">${s.name}</div>
-                <div style="color:var(--primary-600); font-size:0.8rem;">${s.birthday}</div>
+                <div style="color:var(--primary-600); font-size:0.8rem;">${s.displayDate}</div>
+                <div style="color:var(--text-secondary); font-size:0.75rem;">${s.daysUntil === 0 ? 'Today!' : s.daysUntil === 1 ? 'Tomorrow' : `in ${s.daysUntil} days`}</div>
             </div>
         `).join('');
     } else {
         birthdaysSection.classList.add('hidden');
     }
 }
+
 
 // ===== Modal Logic =====
 
