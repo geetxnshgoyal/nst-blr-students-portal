@@ -11,27 +11,10 @@ const admin = require('firebase-admin');
 const sharp = require('sharp');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
-
-// ===== OTP Storage (in-memory, expires after 10 minutes) =====
-const otpStore = new Map();
-
-// Clean expired OTPs every 5 minutes
-setInterval(() => {
-    const now = Date.now();
-    for (const [usn, data] of otpStore.entries()) {
-        if (data.expiresAt < now) {
-            otpStore.delete(usn);
-        }
-    }
-}, 5 * 60 * 1000);
-
-// ===== Email Configuration =====
 let transporter = null;
-
 if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
@@ -46,8 +29,6 @@ if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
 } else {
     console.warn('⚠️ SMTP not configured - OTP will be logged to console');
 }
-
-// Helper to get base64 logo
 function getBase64Logo() {
     try {
         const logoPath = path.join(__dirname, 'public', 'favicon.png');
@@ -117,8 +98,6 @@ async function sendOTP(email, otp, studentName) {
         console.log(`\n📧 [DEV MODE] OTP for ${email}: ${otp}\n`);
     }
 }
-
-// ===== Firebase Admin SDK Initialization =====
 let db = null;
 let firebaseInitialized = false;
 
@@ -147,8 +126,6 @@ function initializeFirebase() {
 }
 
 firebaseInitialized = initializeFirebase();
-
-// ===== Password Configuration =====
 let storedPasswordHash = null;
 const DEFAULT_PASSWORD = process.env.PASSWORD || '12345678';
 
@@ -159,8 +136,6 @@ const DEFAULT_PASSWORD = process.env.PASSWORD || '12345678';
         storedPasswordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
     }
 })();
-
-// ===== Security Middleware =====
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -178,7 +153,7 @@ app.use(helmet({
 
 app.use(express.json());
 
-// ===== Rate Limiters =====
+
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
@@ -191,7 +166,7 @@ const portalLimiter = rateLimit({
     message: { error: 'Rate limit exceeded' },
 });
 
-// OTP Rate Limiter - Relaxed to allow multiple users (classroom scenario)
+
 const otpRequestLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 100, // Allow 100 requests per minute per IP (prevents IP blocking)
@@ -213,8 +188,6 @@ const uploadLimiter = rateLimit({
     max: 5,
     message: { error: 'Too many upload attempts' },
 });
-
-// ===== File Upload Configuration =====
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
@@ -227,7 +200,6 @@ const upload = multer({
     }
 });
 
-// ===== Auth Middleware =====
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -273,30 +245,32 @@ function authenticateAdmin(req, res, next) {
     });
 }
 
-// ===== Admin UI Route =====
+
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// ===== Admin API Routes =====
 
-// 1. Request Admin OTP
+
+
 app.post('/api/admin/login', authLimiter, async (req, res) => {
     try {
         const otp = crypto.randomInt(100000, 999999).toString();
+        const adminEmail = process.env.ADMIN_EMAIL || 'goyalgeetansh@gmail.com';
 
-        // Store OTP for Admin
-        otpStore.set('ADMIN', {
+        // Store OTP for Admin in Firestore
+        await db.collection('otps').doc('ADMIN').set({
             otp,
-            email: ADMIN_EMAIL,
-            expiresAt: Date.now() + 5 * 60 * 1000, // 5 mins
+            email: adminEmail,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 5 * 60 * 1000), // 5 mins
             verified: false
         });
 
-        await sendOTP(ADMIN_EMAIL, otp, 'Administrator');
+        await sendOTP(adminEmail, otp, 'Administrator');
 
         // Return masked email
-        const masked = ADMIN_EMAIL.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+        const masked = adminEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3');
         res.json({ success: true, message: `OTP sent to ${masked}` });
     } catch (e) {
         console.error('Admin login error:', e);
@@ -305,22 +279,33 @@ app.post('/api/admin/login', authLimiter, async (req, res) => {
 });
 
 // 2. Verify Admin OTP
-app.post('/api/admin/verify', authLimiter, (req, res) => {
-    const { otp } = req.body;
-    const stored = otpStore.get('ADMIN');
+app.post('/api/admin/verify', authLimiter, async (req, res) => {
+    try {
+        const { otp } = req.body;
 
-    if (!stored) return res.status(400).json({ error: 'No OTP requested' });
-    if (stored.expiresAt < Date.now()) {
-        otpStore.delete('ADMIN');
-        return res.status(400).json({ error: 'OTP expired' });
+        const docRef = db.collection('otps').doc('ADMIN');
+        const doc = await docRef.get();
+
+        if (!doc.exists) return res.status(400).json({ error: 'No OTP requested' });
+
+        const stored = doc.data();
+
+        if (stored.expiresAt.toMillis() < Date.now()) {
+            await docRef.delete();
+            return res.status(400).json({ error: 'OTP expired' });
+        }
+
+        if (stored.otp !== otp.trim()) return res.status(400).json({ error: 'Invalid OTP' });
+
+        // Success - Issue Admin Token
+        await docRef.delete(); // Cleanup
+        const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({ success: true, token });
+    } catch (e) {
+        console.error('Admin verify error:', e);
+        res.status(500).json({ error: 'Verification failed' });
     }
-    if (stored.otp !== otp.trim()) return res.status(400).json({ error: 'Invalid OTP' });
-
-    // Success - Issue Admin Token
-    otpStore.delete('ADMIN');
-    const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
-
-    res.json({ success: true, token });
 });
 
 // 3. Get All Students (Protected)
@@ -405,11 +390,15 @@ app.post('/api/portal/student/:usn/request-otp', otpRequestLimiter, async (req, 
             return res.status(400).json({ error: 'Invalid USN format' });
         }
 
-        // Check if OTP already exists and enforce COOLDOWN
-        const existingOTP = otpStore.get(usn);
-        if (existingOTP) {
-            const timeSinceCreated = Date.now() - (existingOTP.expiresAt - 10 * 60 * 1000);
-            // If requested less than 30 seconds ago, BLOCK IT
+        const otpRef = db.collection('otps');
+
+        // Check for existing OTP and cooldown
+        const doc = await otpRef.doc(usn).get();
+        if (doc.exists) {
+            const data = doc.data();
+            const timeSinceCreated = Date.now() - data.createdAt.toMillis();
+
+            // 30s cooldown
             if (timeSinceCreated < 30 * 1000) {
                 const waitSeconds = Math.ceil((30 * 1000 - timeSinceCreated) / 1000);
                 return res.status(429).json({
@@ -417,7 +406,6 @@ app.post('/api/portal/student/:usn/request-otp', otpRequestLimiter, async (req, 
                 });
             }
         }
-
 
         if (!firebaseInitialized || !db) {
             return res.status(503).json({ error: 'Database not available' });
@@ -438,10 +426,12 @@ app.post('/api/portal/student/:usn/request-otp', otpRequestLimiter, async (req, 
 
         const otp = crypto.randomInt(100000, 999999).toString();
 
-        otpStore.set(usn, {
+        // Store in Firestore (Expires in 10 mins)
+        await otpRef.doc(usn).set({
             otp,
             email,
-            expiresAt: Date.now() + 10 * 60 * 1000,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000),
             verified: false
         });
 
@@ -473,14 +463,21 @@ app.post('/api/portal/student/:usn/verify-otp', portalLimiter, async (req, res) 
             return res.status(400).json({ error: 'OTP required' });
         }
 
-        const stored = otpStore.get(usn);
+        if (!firebaseInitialized || !db) {
+            return res.status(503).json({ error: 'Database unavailable' });
+        }
 
-        if (!stored) {
+        const otpDocRef = db.collection('otps').doc(usn);
+        const otpDoc = await otpDocRef.get();
+
+        if (!otpDoc.exists) {
             return res.status(400).json({ error: 'No OTP requested. Please request a new OTP.' });
         }
 
-        if (stored.expiresAt < Date.now()) {
-            otpStore.delete(usn);
+        const stored = otpDoc.data();
+
+        if (stored.expiresAt.toMillis() < Date.now()) {
+            await otpDocRef.delete();
             return res.status(400).json({ error: 'OTP expired. Please request a new one.' });
         }
 
@@ -488,16 +485,25 @@ app.post('/api/portal/student/:usn/verify-otp', portalLimiter, async (req, res) 
             return res.status(400).json({ error: 'Invalid OTP' });
         }
 
-        stored.verified = true;
-        otpStore.set(usn, stored);
+        // Mark as verified (optional if we just issue token, but good for audit)
+        await otpDocRef.update({ verified: true });
 
         const editToken = jwt.sign({ usn, verified: true }, JWT_SECRET, { expiresIn: '15m' });
+
+        // Fetch full student data to return to the user (unmasked)
+        const studentDoc = await db.collection('students').doc(usn).get();
+        const student = studentDoc.data();
 
         res.json({
             success: true,
             message: 'Verification successful!',
-            editToken
+            editToken,
+            student: student // Return full data so UI can populate forms
         });
+
+        // Cleanup OTP after successful verification to prevent reuse
+        await otpDocRef.delete();
+
     } catch (error) {
         console.error('OTP verify error:', error);
         res.status(500).json({ error: 'Verification failed' });
@@ -661,6 +667,60 @@ app.post('/api/portal/student/:usn/photo', uploadLimiter, upload.single('photo')
     } catch (error) {
         console.error('Photo upload error:', error);
         res.status(500).json({ error: 'Failed to upload photo' });
+    }
+});
+
+// Admin endpoint: Batch upload photos
+app.post('/api/admin/batch-upload-photos', async (req, res) => {
+    try {
+        const { updates } = req.body;
+
+        if (!updates || !Array.isArray(updates)) {
+            return res.status(400).json({ error: 'Updates array required' });
+        }
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const update of updates) {
+            try {
+                const { usn, url } = update;
+
+                // Download image
+                const imageResponse = await axios.get(url, {
+                    responseType: 'arraybuffer',
+                    timeout: 10000,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+                    }
+                });
+
+                // Compress to WebP
+                const compressedBuffer = await sharp(imageResponse.data)
+                    .resize(400, 400, { fit: 'cover', withoutEnlargement: true })
+                    .webp({ quality: 85 })
+                    .toBuffer();
+
+                const base64Photo = `data:image/webp;base64,${compressedBuffer.toString('base64')}`;
+
+                // Update database
+                await db.collection('students').doc(usn).update({
+                    photo: base64Photo,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+
+                successCount++;
+            } catch (error) {
+                console.error(`Failed to update ${update.name}:`, error.message);
+                failCount++;
+            }
+        }
+
+        res.json({ success: successCount, failed: failCount });
+
+    } catch (error) {
+        console.error('Batch upload error:', error);
+        res.status(500).json({ error: 'Batch upload failed' });
     }
 });
 

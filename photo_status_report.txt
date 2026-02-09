@@ -1,0 +1,242 @@
+
+STUDENT PHOTO STATUS REPORT
+===========================
+Generated: 2/9/2026, 2:30:41 PM
+
+📊 SUMMARY
+----------
+Total Students: 124
+With Photos: 65
+Without Photos: 59
+
+✅ STUDENTS WITH PHOTOS (65)
+==================================================
+1. Abhay Tomar (2102508702)
+2. Abhijit Saha (2102508703)
+3. Abhinav Kumar (2102508704)
+4. Addhya Nandini Singh (2102508705)
+5. Aditi Singh (2102508706)
+6. Akshay Kumar (2102508708)
+7. Aman Gupta (2102508709)
+8. Anant Sharma (2102508710)
+9. Ananya Chavan (2102508711)
+10. Anjali Singh (2102508712)
+11. Anubhav Kumari (2102508713)
+12. Apish Rana (2102508715)
+13. Archita Singh (2102508716)
+14. Aryan Chauhan (2102508718)
+15. Aryan Patel (2102508719)
+16. Avanish (2102508723)
+17. Bhavesh Sharma (2102508727)
+18. Bibhukesh Medhi (2102508728)
+19. C Harikrishna (2102508730)
+20. Deekshith R (2102508735)
+21. Dhanishtha (2102508738)
+22. Dhashami J (2102508739)
+23. Dhruv Mehta (2102508741)
+24. Diganth N (2102508742)
+25. Geetansh Goyal (2102508748)
+26. Harshit Chand (2102508750)
+27. Jaidev Basandrai (2102508754)
+28. Jaishree (2102508756)
+29. Jithendra Sangu (2102508799)
+30. Jothin (2102508757)
+31. Lay Sandeep Shah (2102508763)
+32. Mahaveer Kumar Chhajer (2102508766)
+33. Mahi Manjari Singh (2102508767)
+34. Namah Omprakash (2102508771)
+35. Nayan Raj (2102508772)
+36. Nishtha Agarwal (2102508773)
+37. Nithyaraj Murugan Mudhaliyar (2102508770)
+38. Parijat Chakraborty (2102508779)
+39. Prachi Chaurasia (2102508780)
+40. Prateek Gupta (2102508783)
+41. Raaj Patre (2102508785)
+42. Ravi Sharma (2102508788)
+43. Ruthvik V (2102508821)
+44. Sahitya Singh (2102508794)
+45. Sai Srija (2102508731)
+46. Sainy Verma (2102508795)
+47. Saksham Kumar (2102508796)
+48. Sakshi Shinde (2102508805)
+49. Samriddhi Raj (2102508798)
+50. Sanskar Bansal (2102508800)
+51. Saubhagya Sharma (2102508802)
+52. Saurabh Kumar (2102508803)
+53. Shaaz Hemani (2102508804)
+54. Shiv Prakash Maurya (2102508806)
+55. Shivansh Gaurav (2102508808)
+56. Shresth Nanwani (2102508810)
+57. Shreyash Sarangdhar Ambedare (2102508812)
+58. Sidharth Mishra (2102508815)
+59. SK Izaz Ahmed (2102508792)
+60. Soham Muhury (2102508816)
+61. Srujana Gandla (2102508747)
+62. Sujan Y D (2102508818)
+63. Unnati Jaiswal (2102508819)
+64. Vikas Sharma (2102508823)
+65. Vikram Goud (2102508746)
+
+❌ STUDENTS WITHOUT PHOTOS (59)
+==================================================
+1. Aarpan Lohora (2102508701)
+   LinkedIn: https://www.linkedin.com/in/aarpan-lohora-5433a6320
+
+2. Aditya Ghate (2102508707)
+   LinkedIn: https://www.linkedin.com/in/aditya-ghate-a60191380/
+
+3. AJAY (2102508749)
+
+4. Aksh Wagle (2102508825)
+   LinkedIn: https://www.linkedin.com/in/aksh-wagle-b29626372/
+
+5. Anushka Gupta (2102508714)
+   LinkedIn: https://www.linkedin.com/in/anushka-gupta-04325b383/
+
+6. ARUNIKA CHANDA (2102508717)
+   LinkedIn: https://www.linkedin.com/in/arunika-chanda-4859272b9
+
+7. Ashmita Kamath (2102508720)
+   LinkedIn: https://www.linkedin.com/in/ashmita-kamath-5a06b02b6
+
+8. Asmitha. M (2102508721)
+   LinkedIn: https://www.linkedin.com/in/asmitha-m-0a7424380?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app
+
+9. Atul Sahu (2102508722)
+   LinkedIn: https://www.linkedin.com/in/atulwn
+
+10. Ayush (2102508724)
+   LinkedIn: https://www.linkedin.com/in/ayushpro1428
+
+11. Bikash Jha (2102508729)
+   LinkedIn: https://www.linkedin.com/in/bikash-jha-888184368
+
+12. Chavi Makana (2102508732)
+   LinkedIn: https://www.linkedin.com/in/chavi-makana-10a85a36a
+
+13. Chinmaya S (2102508791)
+   LinkedIn: https://www.linkedin.com/in/chinmaya-s-00289b366
+
+14. Debangshu Sarkar (2102508734)
+
+15. Deepak Kumar Choudhary (2102508736)
+   LinkedIn: https://www.linkedin.com/in/deepak-kumar-choudhary-b799b0379/
+
+16. Dev Kumar (2102508737)
+
+17. Dhiraj Rathod (2102508740)
+   LinkedIn: https://www.linkedin.com/in/dhiraj-rathod-2ab229397
+
+18. Divya Yadav (2102508743)
+   LinkedIn: https://www.linkedin.com/in/divya-yadav-74b952377/
+
+19. Divyanshu Prakash (2102508744)
+   LinkedIn: https://www.linkedin.com/in/divyanshu-prakash-023511388/
+
+20. Dushyant Acharya (2102508745)
+   LinkedIn: https://www.linkedin.com/in/dushyant-acharya-243205377
+
+21. Harshit Shukla (2102508751)
+   LinkedIn: https://www.linkedin.com/in/harshit-shukla-3386973a5/
+
+22. Ishika Jain (2102508752)
+
+23. Jai Agarwal (2102508753)
+   LinkedIn: https://www.linkedin.com/in/jai9ag/
+
+24. Kartikmanmode (2102508758)
+   LinkedIn: https://www.linkedin.com/in/kartik-manmode-b03150365
+
+25. Krishna Chaurasia (2102508761)
+
+26. Kumari Shristi (2102508762)
+   LinkedIn: https://www.linkedin.com/in/shristishankar
+
+27. Liya M (2102508764)
+   LinkedIn: https://www.linkedin.com/in/liya-manikkraju-07b7742b9/
+
+28. Luvya Padmaj Rana (2102508765)
+   LinkedIn: https://www.linkedin.com/in/luvyarana
+
+29. Mohammed Anas (2102508768)
+   LinkedIn: https://www.linkedin.com/in/mohammed-anas-70946637b
+
+30. Mohd Faizan Khan (2102508769)
+   LinkedIn: https://www.linkedin.com/in/mohd-faizan-khan-95310b30a
+
+31. Mohith Kumar (2102508774)
+
+32. Navya (2102508725)
+   LinkedIn: https://www.linkedin.com/in/navya-krushi-395a2a37b
+
+33. Paheli Choudhuri (2102508776)
+   LinkedIn: https://www.linkedin.com/in/paheli-choudhuri-1025hsuya/
+
+34. Pankaj Kumar (2102508777)
+   LinkedIn: https://www.linkedin.com/in/pankaj-kumar-2a857524b
+
+35. Pm Mohammed Waaiz (2102508775)
+   LinkedIn: https://www.linkedin.com/in/pm-mohammed-waaiz
+
+36. Pranav Singh (2102508781)
+
+37. Prashant C G (2102508782)
+   LinkedIn: https://www.linkedin.com/in/prashant-c-g-798746332
+
+38. Pulkit Namdev (2102508784)
+   LinkedIn: https://www.linkedin.com/in/pulkit-singh-namdev-648927380
+
+39. Rachana Adhikary (2102508786)
+   LinkedIn: https://www.linkedin.com/in/rachana-adhikary-133a3b36b/
+
+40. Rajveer Singh (2102508787)
+   LinkedIn: https://www.linkedin.com/in/rj-b96407374
+
+41. Ripunjay Roshan (2102508789)
+
+42. Rithull Raj Kallat (2102508790)
+
+43. Sadiqua Parween (2102508793)
+   LinkedIn: https://www.linkedin.com/in/sadiqua-parween-93aa5a380
+
+44. Samrat Sharma (2102508797)
+   LinkedIn: https://www.linkedin.com/in/samrat-sharma-769255381/
+
+45. Sanskriti Jain (2102508801)
+   LinkedIn: https://www.linkedin.com/in/sanskriti-jain-764686388/
+
+46. Santhosh Chevuri (2102508733)
+
+47. Sathwik (2102508759)
+
+48. Shanmuka Pranav Sai (2102508778)
+
+49. Shivam Kumar (2102508807)
+
+50. Shivansh Goel (2102508809)
+   LinkedIn: https://www.linkedin.com/in/shivansh-goel-667193380/
+
+51. Shreya Agrawal (2102508811)
+
+52. Shubhangi Kumari (2102508813)
+   LinkedIn: https://www.linkedin.com/in/shubhangi-kumari-1aa485366
+
+53. Siddhanth Shiraguppi (2102508814)
+   LinkedIn: https://www.linkedin.com/in/siddhanth-shiraguppi-56664336b
+
+54. Srishti Nagpure (2102508817)
+   LinkedIn: https://www.linkedin.com/in/srishti-nagpure-10a100381
+
+55. Sumayya Khan (2102508760)
+   LinkedIn: https://www.linkedin.com/in/sumayya-khan-5a6872341
+
+56. Swayam Bangad (2102508726)
+
+57. Utsav Doye (2102508820)
+   LinkedIn: https://www.linkedin.com/in/utsav-doye
+
+58. Vani Bansal (2102508822)
+   LinkedIn: https://www.linkedin.com/in/vani-b-a5256729a
+
+59. Vineesh SS (2102508824)
+   LinkedIn: https://www.linkedin.com/in/vineesh-ss-098478364/

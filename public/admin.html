@@ -138,6 +138,12 @@
                             <option value="usn">Sort by USN</option>
                             <option value="batch">Sort by Batch</option>
                         </select>
+                        <button id="birthday-btn" class="action-btn" title="Show Upcoming Birthdays">
+                            🎂 Birthdays
+                        </button>
+                        <button id="refresh-btn" class="action-btn" title="Refresh Data">
+                            🔄 Refresh
+                        </button>
                     </div>
 
                     <!-- Upcoming Birthdays -->
@@ -190,6 +196,28 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
             outline: none;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--primary-500);
+            background: var(--primary-500);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .action-btn:hover {
+            background: var(--primary-600);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .action-btn:active {
+            transform: translateY(0);
         }
 
         .birthdays-section {
