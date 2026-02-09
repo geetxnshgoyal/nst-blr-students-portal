@@ -232,10 +232,12 @@ function displayStudent(student) {
         profilePhoto.src = student.photo;
         profilePhoto.classList.remove('hidden');
         photoPlaceholder.classList.add('hidden');
+        photoContainer.classList.remove('missing-photo');
     } else {
         profilePhoto.classList.add('hidden');
         photoPlaceholder.classList.remove('hidden');
         photoInitial.textContent = (student.name || 'U').charAt(0).toUpperCase();
+        photoContainer.classList.add('missing-photo');
     }
 
     // Set details
@@ -482,6 +484,7 @@ photoInput.addEventListener('change', async (e) => {
         profilePhoto.src = result.photoUrl;
         profilePhoto.classList.remove('hidden');
         photoPlaceholder.classList.add('hidden');
+        photoContainer.classList.remove('missing-photo');
 
         // Update current student data
         currentStudent.photo = result.photoUrl;
@@ -503,6 +506,15 @@ updateForm.addEventListener('submit', async (e) => {
 
     if (!editToken) {
         showToast('Please verify your identity first', 'error');
+        return;
+    }
+
+    // Check if photo is mandatory
+    if (!currentStudent.photo || !currentStudent.photo.trim()) {
+        showToast('Profile photo is mandatory. Please upload a photo to proceed.', 'error');
+        photoContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        photoContainer.classList.add('shake-animation');
+        setTimeout(() => photoContainer.classList.remove('shake-animation'), 500);
         return;
     }
 

@@ -1112,7 +1112,76 @@ body {
         flex-direction: column;
     }
 
-    .otp-input-group input {
-        font-size: 1.5rem;
+
+}
+
+/* Missing Photo Highlight */
+.photo-container.missing-photo {
+    border-color: var(--error);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    animation: pulse-error 2s infinite;
+}
+
+.photo-container.missing-photo .photo-upload-overlay {
+    background: rgba(239, 68, 68, 0.1);
+    opacity: 1;
+}
+
+.photo-container.missing-photo .photo-upload-overlay span {
+    color: var(--error);
+    font-weight: 700;
+}
+
+.photo-container.missing-photo .photo-upload-overlay svg {
+    color: var(--error);
+}
+
+.photo-container.missing-photo .photo-placeholder {
+    background: var(--error-light);
+    color: var(--error);
+}
+
+@keyframes pulse-error {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+        border-color: var(--error);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+        border-color: var(--error);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        border-color: var(--error);
+    }
+}
+
+.shake-animation {
+    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@keyframes shake {
+
+    10%,
+    90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(4px, 0, 0);
     }
 }
