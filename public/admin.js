@@ -136,8 +136,37 @@ function applyFilters() {
     renderStudents(filtered);
 }
 
+
 searchInput.addEventListener('input', applyFilters);
 sortSelect.addEventListener('change', applyFilters);
+
+// Birthday button - toggle birthday section
+document.getElementById('birthday-btn').addEventListener('click', () => {
+    birthdaysSection.classList.toggle('hidden');
+});
+
+// Refresh button - reload all students
+document.getElementById('refresh-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('refresh-btn');
+    btn.textContent = '⏳ Refreshing...';
+    btn.disabled = true;
+
+    try {
+        await showDashboard();
+        btn.textContent = '✅ Refreshed';
+        setTimeout(() => {
+            btn.textContent = '🔄 Refresh';
+            btn.disabled = false;
+        }, 1500);
+    } catch (e) {
+        btn.textContent = '❌ Failed';
+        setTimeout(() => {
+            btn.textContent = '🔄 Refresh';
+            btn.disabled = false;
+        }, 1500);
+    }
+});
+
 
 function renderStudents(students) {
     if (students.length === 0) {
