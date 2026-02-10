@@ -170,15 +170,21 @@ document.getElementById('refresh-btn').addEventListener('click', async () => {
 
 studentsGrid.addEventListener('click', (e) => {
     const card = e.target.closest('.student-card');
-    if (card && card.dataset.usn) {
-        openStudentModal(card.dataset.usn);
+    if (card) {
+        console.log('Clicked student card:', card.dataset.usn);
+        if (card.dataset.usn) {
+            openStudentModal(card.dataset.usn);
+        }
     }
 });
 
 birthdaysGrid.addEventListener('click', (e) => {
     const card = e.target.closest('.birthday-card');
-    if (card && card.dataset.usn) {
-        openStudentModal(card.dataset.usn);
+    if (card) {
+        console.log('Clicked birthday card:', card.dataset.usn);
+        if (card.dataset.usn) {
+            openStudentModal(card.dataset.usn);
+        }
     }
 });
 
@@ -264,9 +270,13 @@ function checkBirthdays() {
 
 function openStudentModal(usn) {
     try {
-        const s = allStudents.find(stu => stu.usn === usn);
+        console.log('Opening modal for USN:', usn); // Debug log
+        // Ensure accurate comparison by converting to strings
+        const s = allStudents.find(stu => String(stu.usn) === String(usn));
+
         if (!s) {
-            console.error('Student not found for USN:', usn);
+            console.error('Student not found for USN:', usn, 'Available:', allStudents.map(s => s.usn));
+            showMessage('Student data not found', true);
             return;
         }
 
