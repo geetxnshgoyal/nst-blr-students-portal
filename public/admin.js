@@ -168,6 +168,20 @@ document.getElementById('refresh-btn').addEventListener('click', async () => {
 });
 
 
+studentsGrid.addEventListener('click', (e) => {
+    const card = e.target.closest('.student-card');
+    if (card && card.dataset.usn) {
+        openStudentModal(card.dataset.usn);
+    }
+});
+
+birthdaysGrid.addEventListener('click', (e) => {
+    const card = e.target.closest('.birthday-card');
+    if (card && card.dataset.usn) {
+        openStudentModal(card.dataset.usn);
+    }
+});
+
 function renderStudents(students) {
     if (students.length === 0) {
         studentsGrid.innerHTML = '<p style="text-align:center; width:100%; color: var(--text-secondary);">No students found.</p>';
@@ -175,20 +189,20 @@ function renderStudents(students) {
     }
 
     studentsGrid.innerHTML = students.map(s => `
-        <div class="student-card" onclick="openStudentModal('${s.usn}')" style="cursor: pointer;">
-            <img src="${s.photo || 'https://via.placeholder.com/60'}" class="mini-photo" alt="${s.name}">
-            <div class="student-info">
-                <h4>
-                    ${s.name || 'Unknown Name'} 
-                    ${s.status === 'left' ? '<span style="color:var(--error); font-size:0.8em; margin-left:5px;">(Left Batch)</span>' : ''}
-                </h4>
-                <p>${s.usn}</p>
-                <div style="font-size: 0.8rem; color: var(--primary-500); margin-top: 4px;">
-                    ${s.email || 'No Email'}
+            <div class="student-card" data-usn="${s.usn || ''}" style="cursor: pointer;">
+                <img src="${s.photo || 'https://via.placeholder.com/60'}" class="mini-photo" alt="${s.name}">
+                <div class="student-info">
+                    <h4>
+                        ${s.name || 'Unknown Name'} 
+                        ${s.status === 'left' ? '<span style="color:var(--error); font-size:0.8em; margin-left:5px;">(Left Batch)</span>' : ''}
+                    </h4>
+                    <p>${s.usn || 'No USN'}</p>
+                    <div style="font-size: 0.8rem; color: var(--primary-500); margin-top: 4px;">
+                        ${s.email || 'No Email'}
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
 }
 
 // ===== Birthdays Logic =====
@@ -233,13 +247,13 @@ function checkBirthdays() {
     if (withBirthdays.length > 0) {
         birthdaysSection.classList.remove('hidden');
         birthdaysGrid.innerHTML = withBirthdays.map(s => `
-            <div class="birthday-card" onclick="openStudentModal('${s.usn}')" style="cursor: pointer;">
-                <img src="${s.photo || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px;">
-                <div style="font-weight:600; font-size:0.9rem;">${s.name}</div>
-                <div style="color:var(--primary-600); font-size:0.8rem;">${s.displayDate}</div>
-                <div style="color:var(--text-secondary); font-size:0.75rem;">${s.daysUntil === 0 ? 'Today!' : s.daysUntil === 1 ? 'Tomorrow' : `in ${s.daysUntil} days`}</div>
-            </div>
-        `).join('');
+                <div class="birthday-card" data-usn="${s.usn || ''}" style="cursor: pointer;">
+                    <img src="${s.photo || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px;">
+                    <div style="font-weight:600; font-size:0.9rem;">${s.name}</div>
+                    <div style="color:var(--primary-600); font-size:0.8rem;">${s.displayDate}</div>
+                    <div style="color:var(--text-secondary); font-size:0.75rem;">${s.daysUntil === 0 ? 'Today!' : s.daysUntil === 1 ? 'Tomorrow' : `in ${s.daysUntil} days`}</div>
+                </div>
+            `).join('');
     } else {
         birthdaysSection.classList.add('hidden');
     }
@@ -248,34 +262,42 @@ function checkBirthdays() {
 
 // ===== Modal Logic =====
 
-window.openStudentModal = (usn) => {
-    const s = allStudents.find(stu => stu.usn === usn);
-    if (!s) return;
+function openStudentModal(usn) {
+    try {
+        const s = allStudents.find(stu => stu.usn === usn);
+        if (!s) {
+            console.error('Student not found for USN:', usn);
+            return;
+        }
 
-    modalBody.innerHTML = `
-        <div class="modal-profile-header">
-            <img src="${s.photo || 'https://via.placeholder.com/100'}" class="modal-photo">
-            <h2 style="margin: 10px 0 5px;">${s.name || 'Unknown'}</h2>
-            <p style="color: var(--primary-600); margin:0;">${s.usn}</p>
-        </div>
-        
-        <div class="modal-detail-row"><span class="modal-label">Batch</span> <span class="modal-value">${s.batch || '-'}</span></div>
-        <div class="modal-detail-row"><span class="modal-label">Email</span> <span class="modal-value">${s.email || '-'}</span></div>
-        <div class="modal-detail-row"><span class="modal-label">Institutional Email</span> <span class="modal-value">${s.institutional_email || '-'}</span></div>
-        <div class="modal-detail-row"><span class="modal-label">Gender</span> <span class="modal-value">${s.gender || '-'}</span></div>
-        <div class="modal-detail-row"><span class="modal-label">Birthday</span> <span class="modal-value">${s.birthday || '-'}</span></div>
-        
-        <div class="modal-detail-row">
-            <span class="modal-label">LinkedIn</span> 
-            <span class="modal-value">${s.linkedin ? `<a href="${s.linkedin}" target="_blank" style="color:var(--primary-500)">View Profile</a>` : '-'}</span>
-        </div>
-        <div class="modal-detail-row" style="border-bottom: none;">
-            <span class="modal-label">GitHub</span> 
-            <span class="modal-value">${s.github ? `<a href="${s.github}" target="_blank" style="color:var(--primary-500)">View Profile</a>` : '-'}</span>
-        </div>
-    `;
+        modalBody.innerHTML = `
+                <div class="modal-profile-header">
+                    <img src="${s.photo || 'https://via.placeholder.com/100'}" class="modal-photo">
+                    <h2 style="margin: 10px 0 5px;">${s.name || 'Unknown'}</h2>
+                    <p style="color: var(--primary-600); margin:0;">${s.usn}</p>
+                </div>
+                
+                <div class="modal-detail-row"><span class="modal-label">Batch</span> <span class="modal-value">${s.batch || '-'}</span></div>
+                <div class="modal-detail-row"><span class="modal-label">Email</span> <span class="modal-value">${s.email || '-'}</span></div>
+                <div class="modal-detail-row"><span class="modal-label">Institutional Email</span> <span class="modal-value">${s.institutional_email || '-'}</span></div>
+                <div class="modal-detail-row"><span class="modal-label">Gender</span> <span class="modal-value">${s.gender || '-'}</span></div>
+                <div class="modal-detail-row"><span class="modal-label">Birthday</span> <span class="modal-value">${s.birthday || '-'}</span></div>
+                
+                <div class="modal-detail-row">
+                    <span class="modal-label">LinkedIn</span> 
+                    <span class="modal-value">${s.linkedin ? `<a href="${s.linkedin}" target="_blank" style="color:var(--primary-500)">View Profile</a>` : '-'}</span>
+                </div>
+                <div class="modal-detail-row" style="border-bottom: none;">
+                    <span class="modal-label">GitHub</span> 
+                    <span class="modal-value">${s.github ? `<a href="${s.github}" target="_blank" style="color:var(--primary-500)">View Profile</a>` : '-'}</span>
+                </div>
+            `;
 
-    studentModal.classList.remove('hidden');
+        studentModal.classList.remove('hidden');
+    } catch (e) {
+        console.error('Error opening modal:', e);
+        showMessage('Failed to open profile', true);
+    }
 };
 
 closeModal.onclick = () => studentModal.classList.add('hidden');
