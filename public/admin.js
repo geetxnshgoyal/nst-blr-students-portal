@@ -100,17 +100,41 @@ async function showDashboard() {
         const res = await fetch('/api/admin/students', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+
+        if (res.status === 401 || res.status === 403) {
+            console.error('Auth error:', res.status);
+            logout();
+            return;
+        }
+
+        if (!res.ok) throw new Error('Failed to fetch data');
+
         const data = await res.json();
 
         if (data.success) {
-            allStudents = data.students;
-            applyFilters(); // Initial render
-            checkBirthdays();
+            allStudents = data.students || [];
+            try {
+                applyFilters(); // Initial render
+                if (typeof calculateStats === 'function') calculateStats();
+                checkBirthdays();
+            } catch (renderError) {
+                console.error('Rendering error:', renderError);
+                showMessage('Error displaying data', true);
+            }
         } else {
+            console.error('API returned failure:', data);
             logout();
         }
     } catch (e) {
-        logout();
+        console.error('Dashboard error:', e);
+        // Only logout if it's a critical error related to auth, otherwise just alert
+        // But for safety, keep existing behavior for now, just log it.
+        // Actually, if fetch fails (network), we shouldn't logout.
+        if (e.message.includes('Auth')) {
+            logout();
+        } else {
+            showMessage('Network error: ' + e.message, true);
+        }
     }
 }
 
@@ -209,6 +233,44 @@ function renderStudents(students) {
                 </div>
             </div>
         `).join('');
+}
+
+// ===== Stats Logic =====
+
+function calculateStats() {
+    const total = allStudents.length;
+    // Count MISSING data (as requested "left with each data")
+    const missingPhoto = allStudents.filter(s => !s.photo).length;
+    const missingDob = allStudents.filter(s => !s.birthday).length;
+    const missingGithub = allStudents.filter(s => !s.github).length;
+    const missingLinkedin = allStudents.filter(s => !s.linkedin).length;
+
+    const statsBar = document.getElementById('stats-bar');
+    if (!statsBar) return;
+
+    statsBar.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-value">${total}</div>
+            <div class="stat-label">Total Students</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--error)">${missingPhoto}</div>
+            <div class="stat-label">Missing Photo</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--warning)">${missingDob}</div>
+            <div class="stat-label">Missing Birthday</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--primary-500)">${missingGithub}</div>
+            <div class="stat-label">Missing GitHub</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--accent-500)">${missingLinkedin}</div>
+            <div class="stat-label">Missing LinkedIn</div>
+        </div>
+    `;
+    statsBar.classList.remove('hidden');
 }
 
 // ===== Birthdays Logic =====

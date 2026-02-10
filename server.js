@@ -300,7 +300,7 @@ app.post('/api/admin/verify', authLimiter, async (req, res) => {
 
         // Success - Issue Admin Token
         await docRef.delete(); // Cleanup
-        const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '30d' });
 
         res.json({ success: true, token });
     } catch (e) {

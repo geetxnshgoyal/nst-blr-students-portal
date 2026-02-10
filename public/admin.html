@@ -129,6 +129,9 @@
                         <button id="logout-btn" class="logout-btn">Logout</button>
                     </div>
 
+                    <!-- Stats Bar -->
+                    <div id="stats-bar" class="stats-bar hidden"></div>
+
                     <!-- Controls -->
                     <div class="controls-bar">
                         <input type="text" id="search-input" placeholder="Search by Name or USN..."
@@ -175,6 +178,35 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-600);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .controls-bar {
