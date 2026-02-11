@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NST Carpool | Premium Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="carpool.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+
+<body>
+    <div class="ambient-light"></div>
+    <div class="ambient-light-2"></div>
+
+    <div class="app-container">
+        <!-- Auth View -->
+        <div id="auth-view" class="view active">
+            <div class="glass-panel auth-panel">
+                <div class="brand-header">
+                    <h1>NST Carpool</h1>
+                    <p>Exclusive Student Portal</p>
+                </div>
+
+                <!-- Step 1: USN -->
+                <form id="login-form" class="auth-step active">
+                    <div class="input-group">
+                        <label>Enter Serial Number (USN)</label>
+                        <input type="text" id="usn-input" placeholder="e.g. 2102508748" maxlength="10" required>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span>Continue</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                    <p class="status-msg" id="login-status"></p>
+                </form>
+
+                <!-- Step 2: OTP -->
+                <form id="otp-form" class="auth-step">
+                    <div class="otp-header">
+                        <button type="button" id="back-to-login" class="btn-icon">←</button>
+                        <span>Verify Identity</span>
+                    </div>
+                    <p class="helper-text">OTP sent to your official email ending in <span id="email-hint">...</span>
+                    </p>
+                    <div class="input-group">
+                        <input type="text" id="otp-input" placeholder="Enter 6-digit OTP" maxlength="6" required
+                            class="otp-field">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span>Verify & Login</span>
+                    </button>
+                    <p class="status-msg" id="otp-status"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view">
+            <header class="main-header">
+                <div class="user-profile">
+                    <div class="avatar" id="user-avatar">?</div>
+                    <div class="user-info">
+                        <span id="user-usn">Loading...</span>
+                        <span id="user-email" class="sub-text">...</span>
+                    </div>
+                </div>
+                <button id="logout-btn" class="btn-ghost">Logout</button>
+            </header>
+
+            <main class="dashboard-content">
+
+                <!-- Home Dashboard (Default View) -->
+                <div id="home-dashboard">
+                    <!-- Trip Selection -->
+                    <section class="trip-selector" id="trip-selector">
+                        <h2>Start a Journey</h2>
+                        <div class="cards-grid">
+                            <div class="card trip-card" data-type="hostel">
+                                <div class="card-icon">🏠</div>
+                                <h3>To Hostel</h3>
+                                <p>Landing at BLR Airport</p>
+                            </div>
+                            <div class="card trip-card" data-type="airport">
+                                <div class="card-icon">✈️</div>
+                                <h3>To Airport</h3>
+                                <p>Departing from Campus</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Public Live Board -->
+                    <section class="public-board-section">
+                        <div class="board-header">
+                            <h3>Current Active Requests</h3>
+                            <span class="live-indicator">● <span id="public-count">0</span> Live</span>
+                        </div>
+                        <div class="matches-list" id="public-board-list">
+                            <div class="empty-state">Loading live requests...</div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Trip Details Form -->
+                <section class="trip-form hidden" id="trip-details-form">
+                    <div class="form-header">
+                        <button class="btn-icon" id="back-to-selection">←</button>
+                        <h3 id="form-title">Trip Details</h3>
+                    </div>
+
+                    <form id="create-request-form">
+                        <div class="input-grid">
+                            <div class="input-group">
+                                <label id="time-label">Landing Time</label>
+                                <input type="datetime-local" id="time-input" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Flight Number (Optional)</label>
+                                <input type="text" id="flight-input" placeholder="e.g. 6E 505">
+                            </div>
+                            <div class="input-group">
+                                <label>Wait Tolerance</label>
+                                <select id="wait-input">
+                                    <option value="15">± 15 Mins</option>
+                                    <option value="30" selected>± 30 Mins</option>
+                                    <option value="60">± 1 Hour</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary full-width">Find Travel Buddies</button>
+                    </form>
+                </section>
+
+                <!-- User Active Request Board -->
+                <section class="status-board hidden" id="status-board">
+                    <div class="board-header">
+                        <h3>Your Status</h3>
+                        <span class="live-indicator">● Tracking</span>
+                    </div>
+
+                    <div class="my-request-card" id="my-request-card">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <h3>Your Matches</h3>
+                    <div class="matches-list" id="matches-list">
+                        <!-- Populated by JS -->
+                        <div class="empty-state">Looking for matches...</div>
+                    </div>
+
+                    <button id="cancel-request-btn" class="btn-danger">Cancel Request</button>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="carpool.js"></script>
+</body>
+
+</html>

@@ -22,26 +22,18 @@ A modern, secure student portal featuring a dashboard, student directory, and ac
 ## 🛠️ Setup & Usage
 
 ### 1. Installation
-No complex installation required. Just clone and use npm to run the server.
+No complex installation required. Just clone and serve.
 
 ```bash
-# Install dependencies
-npm install
-# Start local server (recommended)
-npm start
-# Or run in development with automatic restart
-npm run dev
+# Start local server
+python3 -m http.server 8080
 ```
 
 ### 2. Access
-Visit `http://localhost:3000` in your browser (or the port in $PORT).
+Visit `http://localhost:8080` in your browser.
 
-- **Default Password (local dev)**: `12345678`
-- **Configuration**: Set the password securely in environment variables:
-  - `PASSWORD` &mdash; plaintext password (server will hash it at startup)
-  - `PASSWORD_HASH` &mdash; precomputed bcrypt hash to avoid storing plaintext
-
-> **Tip**: For production, always use `PASSWORD_HASH` and never commit secrets to source control.
+- **Default Password**: `12345678@`
+- *Note: Please change this password in `app.js` line 2 for security.*
 
 ## 🔒 Security Note
 This application uses simple client-side authentication for demonstration purposes. For production use, it is highly recommended to integrate a backend service (like Firebase authentication) and move sensitive data to a secure database.
