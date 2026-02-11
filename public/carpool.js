@@ -458,7 +458,13 @@ function renderMatches(matches) {
     list.innerHTML = '';
 
     if (matches.length === 0) {
-        list.innerHTML = `<div class="empty-state" style="color:#888; text-align:center; padding:20px;">No exact matches yet.<br>We'll notify you when someone lands near ${inputs.time.value.split('T')[1] || 'your time'}.</div>`;
+        const inputVal = inputs.time.value;
+        let displayTime = 'your time';
+        if (inputVal) {
+            const date = new Date(inputVal + '+05:30');
+            displayTime = date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+        list.innerHTML = `<div class="empty-state" style="color:#888; text-align:center; padding:20px;">No exact matches yet.<br>We'll notify you when someone lands near ${displayTime}.</div>`;
         return;
     }
 

@@ -457,7 +457,9 @@ app.get('/api/admin/students', apiLimiter, authenticateAdmin, async (req, res) =
 app.post('/api/carpool/requests', apiLimiter, requireCarpoolSession, async (req, res) => {
     const { direction, flightCode, time, waitMinutes } = req.body || {};
     if (!direction || !time) return res.status(400).json({ error: 'Direction and time required' });
-    const parsedTime = new Date(time);
+    // Force IST if no offset provided (datetime-local usually sends YYYY-MM-DDTHH:MM)
+    const istTime = time.includes('+') || time.endsWith('Z') ? time : `${time}:00+05:30`;
+    const parsedTime = new Date(istTime);
     if (Number.isNaN(parsedTime.getTime())) return res.status(400).json({ error: 'Invalid time' });
     const request = {
         id: makeToken(),
