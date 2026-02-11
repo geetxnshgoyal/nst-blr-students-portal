@@ -464,11 +464,11 @@ const funnyMessages = {
         (user, match, mins) => `Hey ${user}, you've got ${mins} mins! Grab a Chole Bhature till ${match} arrives. 🥘`,
         (user, match, mins) => `Perfect! You can scroll Reels for ${mins} mins while ${match} lands. 📱`,
         (user, match, mins) => `${match} is joining you in ${mins} mins! Stay hydrated, ${user}. 🥤`,
-        (user, match, mins) => `You've got ${mins} mins! Maybe a quick power nap before ${match} shows up? �`,
+        (user, match, mins) => `You've got ${mins} mins! Maybe a quick power nap before ${match} shows up? 😴`,
         (user, match, mins) => `Tell ${match} you're waiting! You've got ${mins} mins to kill. ⏳`
     ],
     matchWaiting: [
-        (user, match, mins) => `${match} is early! Tell them to grab Chole Bhature for ${mins} mins till you arrive. �`,
+        (user, match, mins) => `${match} is early! Tell them to grab Chole Bhature for ${mins} mins till you arrive. 🥘`,
         (user, match, mins) => `${match} has ${mins} mins to scroll Reels while you land. 📱`,
         (user, match, mins) => `Don't rush, ${user}! ${match} is early and waiting ${mins} mins for you. 🧘`,
         (user, match, mins) => `${match} is already there! They've got ${mins} mins to count floor tiles. 🔢`,
