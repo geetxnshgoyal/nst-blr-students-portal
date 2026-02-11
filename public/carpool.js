@@ -320,11 +320,52 @@ async function fetchPublicRequests() {
                 }
             }
 
-            renderPublicBoard(data.requests || []);
+            const reqs = data.requests || [];
+            renderPublicBoard(reqs);
+
+            if (state.requestId) {
+                const myReq = reqs.find(r => r.id === state.requestId);
+                if (myReq) renderMyRequest(myReq);
+            }
         }
     } catch (e) {
         console.error('Public board error', e);
     }
+}
+
+function renderMyRequest(r) {
+    const card = document.getElementById('my-request-card');
+    if (!card) return;
+
+    const date = new Date(r.time);
+    const timeOptions = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true };
+    const dateOptions = { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' };
+
+    const timeStr = date.toLocaleTimeString('en-IN', timeOptions);
+    const dateStr = date.toLocaleDateString('en-IN', dateOptions);
+
+    const isAirport = r.direction === 'airport';
+    const icon = isAirport ? '✈️' : '🏠';
+    const label = isAirport ? 'Heading to Airport' : 'Coming to Hostel';
+
+    card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+                <div style="font-size: 0.75rem; color: var(--primary-light); font-weight: 800; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 1px;">
+                    ${icon} ${label}
+                </div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: white; line-height: 1.2;">
+                    ${timeStr}
+                </div>
+                <div style="font-size: 0.9rem; opacity: 0.7; font-weight: 500;">
+                    ${dateStr} ${r.flightCode ? '• ' + r.flightCode : ''}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div class="badge-live">Live</div>
+            </div>
+        </div>
+    `;
 }
 
 function renderPublicBoard(requests) {
@@ -357,13 +398,13 @@ function renderPublicBoard(requests) {
 
     requests.sort((a, b) => new Date(a.time) - new Date(b.time));
 
-    requests.forEach(r => {
-        // Don't show my own request in the public list to avoid confusion (optional)
-        // if (r.id === state.requestId) return;
+    const timeOptions = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true };
+    const dateOptions = { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' };
 
+    requests.forEach(r => {
         const date = new Date(r.time);
-        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const timeStr = date.toLocaleTimeString('en-IN', timeOptions);
+        const dateStr = date.toLocaleDateString('en-IN', dateOptions);
 
         const isAirport = r.direction === 'airport';
         const icon = isAirport ? '✈️' : '🏠';
@@ -422,6 +463,9 @@ function renderMatches(matches) {
     }
 
     matches.forEach(m => {
+        const date = new Date(m.time);
+        const timeStr = date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+
         const el = document.createElement('div');
         el.className = 'match-item';
         el.innerHTML = `
@@ -430,7 +474,7 @@ function renderMatches(matches) {
                     <div style="font-weight:bold; color:white;">${m.name}</div>
                     <div class="match-flight">${m.direction.toUpperCase()}</div>
                 </div>
-                <div class="match-time">${m.time}</div>
+                <div class="match-time">${timeStr}</div>
             </div>
             <div class="match-status">${m.wait}</div>
             <div class="match-actions">
