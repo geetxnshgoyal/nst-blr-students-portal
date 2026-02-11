@@ -111,6 +111,13 @@ function invalidateCarpoolCache() {
 
 async function fetchActiveRequests() {
     if (!db) return [];
+
+    // Return cached data if still valid
+    const now = Date.now();
+    if (carpoolCache.requests && (now - carpoolCache.lastUpdate < carpoolCache.TTL)) {
+        return carpoolCache.requests;
+    }
+
     try {
         const cutoff = new Date(Date.now() - (2 * 60 * 60 * 1000)).toISOString();
         const snapshot = await db.collection('carpool_requests')
@@ -129,10 +136,16 @@ async function fetchActiveRequests() {
             }
         });
 
-        return Array.from(unique.values());
+        const result = Array.from(unique.values());
+
+        // Update cache
+        carpoolCache.requests = result;
+        carpoolCache.lastUpdate = now;
+
+        return result;
     } catch (e) {
         console.error("Error fetching requests:", e);
-        return [];
+        return carpoolCache.requests || []; // Fallback to stale cache if error
     }
 }
 
@@ -513,6 +526,7 @@ app.post('/api/carpool/requests', apiLimiter, requireCarpoolSession, async (req,
     if (db) {
         try {
             await db.collection('carpool_requests').doc(request.id).set(request);
+            invalidateCarpoolCache(); // Clear cache on new request
         } catch (e) {
             console.error("Request save error", e);
             return res.status(500).json({ error: 'Database error' });
@@ -604,6 +618,7 @@ app.post('/api/carpool/cancel', apiLimiter, requireCarpoolSession, async (req, r
 
         if (db) {
             await db.collection('carpool_requests').doc(requestId).delete();
+            invalidateCarpoolCache(); // Clear cache on cancellation
         }
         publishMatches();
         res.json({ success: true });

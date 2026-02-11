@@ -455,19 +455,27 @@ async function fetchMatches() {
 
 
 const funnyMessages = [
-    (name, mins) => `Tell ${name} to grab a Chole Bhature for ${mins} mins till you arrive! 🥘`,
-    (name, mins) => `Perfect! ${name} can scroll Reels for ${mins} mins while you land. 📱`,
-    (name, mins) => `${name} is early! Tell them to wait near the pillar and not look suspicious. 🕵️`,
-    (name, mins) => `Sweet! ${name} has ${mins} mins to reconsider their life choices before you arrive. 🧘`,
-    (name, mins) => `${name} is coming! Tell them to stay hydrated for that ${mins} min wait. 🥤`,
-    (name, mins) => `Matched! ${name} will be waiting with a bouquet... of patience. 💐`
+    (user, match, mins) => mins > 20
+        ? `Hey ${user}, you've got ${mins} mins! Grab a Chole Bhature till ${match} arrives. 🥘`
+        : `Hey ${user}, grab a quick Chai while you wait ${mins} mins for ${match}. ☕`,
+    (user, match, mins) => `Perfect! You can scroll Reels for ${mins} mins while ${match} lands. 📱`,
+    (user, match, mins) => `${match} is arriving in ${mins} mins! Find a pillar to lean on and look cool. �️`,
+    (user, match, mins) => `Sweet! You have ${mins} mins to plan which side of the car you're taking. 🚗`,
+    (user, match, mins) => `Stay hydrated, ${user}! You've got ${mins} mins before ${match} joins the ride. 🥤`,
+    (user, match, mins) => `Patience is a virtue, and you've got ${mins} mins of it till ${match} shows up! 🧘`,
+    (user, match, mins) => `You could probably finish a whole episode of a sitcom in these ${mins} mins! �`,
+    (user, match, mins) => `Time for a quick power nap? You've got ${mins} mins! 😴`,
+    (user, match, mins) => `Check your flight status one last time! Still ${mins} mins to go for ${match}. ✈️`,
+    (user, match, mins) => `Hey ${user}, ${match} is only ${mins} mins away. Get your UPI ready for the toll! �`
 ];
 
-function getFunnyMessage(fullName, waitStr) {
-    const name = fullName.split(' ')[0];
-    const mins = waitStr.match(/\d+/) ? waitStr.match(/\d+/)[0] : 'a few';
+function getFunnyMessage(matchFullName, waitStr) {
+    const user = (state.name || 'Student').split(' ')[0];
+    const match = matchFullName.split(' ')[0];
+    const minsMatch = waitStr.match(/\d+/);
+    const mins = minsMatch ? parseInt(minsMatch[0]) : 15;
     const index = Math.floor(Math.random() * funnyMessages.length);
-    return funnyMessages[index](name, mins);
+    return funnyMessages[index](user, match, mins);
 }
 
 function renderMatches(matches) {
@@ -487,34 +495,34 @@ function renderMatches(matches) {
 
     matches.forEach(m => {
         const date = new Date(m.time);
-        const timeStr = date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+        const timeOptions = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true };
+        const timeStr = date.toLocaleTimeString('en-IN', timeOptions);
         const funnyNote = getFunnyMessage(m.name, m.wait);
 
         const el = document.createElement('div');
         el.className = 'match-item';
-        el.style.borderLeft = '4px solid var(--primary-light)';
         el.innerHTML = `
-            <div class="match-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+            <div class="match-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
                 <div style="flex:1;">
-                    <div style="font-weight:bold; color:white; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
-                        ${m.name}
-                        <span style="font-size:0.7rem; background:rgba(0,255,136,0.1); color:var(--success); padding:2px 8px; border-radius:10px; text-transform:uppercase;">Match</span>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="font-weight:800; color:white; font-size:1.15rem; letter-spacing:-0.5px;">${m.name}</span>
+                        <span class="badge-match">Match</span>
                     </div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted); font-weight:500; margin-top:4px; line-height:1.4; font-style: italic;">
+                    <div style="font-size: 0.9rem; color: var(--text-muted); line-height:1.4; border-left: 2px solid var(--primary-light); padding-left:12px; margin-top:10px;">
                         "${funnyNote}"
                     </div>
                 </div>
-                <div style="text-align:right; min-width:80px;">
-                    <div style="color: var(--primary-light); font-weight: 800; font-size: 1.25rem;">${timeStr}</div>
-                    <div style="font-size: 0.7rem; opacity:0.7; font-weight:600; text-transform:uppercase; margin-top:2px;">
+                <div style="text-align:right;">
+                    <div style="color: var(--primary-light); font-weight:900; font-size:1.35rem; line-height:1;">${timeStr}</div>
+                    <div style="font-size:0.7rem; opacity:0.6; font-weight:700; text-transform:uppercase; margin-top:6px; letter-spacing:1px;">
                         ${m.direction}
                     </div>
                 </div>
             </div>
-            <div class="match-actions" style="margin-top:20px;">
-                <button class="btn-small btn-premium-neon" style="width:100%; justify-content:center; padding:14px;" onclick="acceptMatch('${m.id}')">
+            <div class="match-actions" style="margin-top:24px;">
+                <button class="btn-small btn-premium-neon" style="width:100%; border-radius:14px;" onclick="acceptMatch('${m.id}')">
                     <span>Connect with ${m.name.split(' ')[0]}</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M5 12h14M12 5l7 7-7 7"/>
                     </svg>
                 </button>
