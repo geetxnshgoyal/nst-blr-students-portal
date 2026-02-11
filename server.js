@@ -548,7 +548,8 @@ app.get('/api/carpool/matches', apiLimiter, requireCarpoolSession, async (req, r
                 return {
                     id: match.id,
                     direction: match.direction,
-                    time: match.time,
+                    time: other.time,
+                    window: match.time,
                     wait: match.wait,
                     name: other.name || `Student ${other.usn.slice(-4)}`
                 };

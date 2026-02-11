@@ -420,7 +420,7 @@ function renderPublicBoard(requests) {
                     <img src="${r.photo || ''}" onerror="this.style.display='none'" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                     <div>
                         <div style="font-weight:bold; color:white; font-size:0.95rem;">${r.name}</div>
-                        <div class="match-flight" style="font-size:0.8rem; opacity:0.8;">${icon} ${directionLabel} • ${r.flightCode || 'No Flight #'}</div>
+                        <div class="match-flight" style="font-size:0.8rem; opacity:0.8;">${icon} ${directionLabel}${r.flightCode ? ' • ' + r.flightCode : ''}</div>
                     </div>
                 </div>
                 <div class="match-time" style="text-align:right;">
@@ -474,17 +474,27 @@ function renderMatches(matches) {
 
         const el = document.createElement('div');
         el.className = 'match-item';
+        el.style.borderLeft = '4px solid var(--neon-blue)';
         el.innerHTML = `
-            <div class="match-header">
+            <div class="match-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <div>
-                    <div style="font-weight:bold; color:white;">${m.name}</div>
-                    <div class="match-flight">${m.direction.toUpperCase()}</div>
+                    <div style="font-weight:bold; color:white; font-size:1.1rem;">${m.name}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); text-transform:uppercase; font-weight:700; margin-top:2px;">
+                        ${m.direction} • ${m.window}
+                    </div>
                 </div>
-                <div class="match-time">${timeStr}</div>
+                <div style="text-align:right;">
+                    <div style="color: var(--primary-light); font-weight: 800; font-size: 1.25rem;">${timeStr}</div>
+                    <div style="font-size: 0.75rem; opacity:0.6;">${m.wait}</div>
+                </div>
             </div>
-            <div class="match-status">${m.wait}</div>
-            <div class="match-actions">
-                <button class="btn-small btn-neon" onclick="acceptMatch('${m.id}')">Connect Request</button>
+            <div class="match-actions" style="margin-top:12px;">
+                <button class="btn-small btn-neon" onclick="acceptMatch('${m.id}')">
+                    <span>Connect Request</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
             </div>
         `;
         list.appendChild(el);
