@@ -100,13 +100,24 @@ function minutesDiff(a, b) {
 async function fetchActiveRequests() {
     if (!db) return [];
     try {
-        // Keep requests visible for 2 hours after their scheduled time 
-        // (to allow for landing, baggage, and meeting up)
         const cutoff = new Date(Date.now() - (2 * 60 * 60 * 1000)).toISOString();
         const snapshot = await db.collection('carpool_requests')
             .where('time', '>', cutoff)
+            .orderBy('time', 'asc')
             .get();
-        return snapshot.docs.map(doc => doc.data());
+
+        const requests = snapshot.docs.map(doc => doc.data());
+
+        // Deduplicate by USN - Keep the most recently created request if multiple exist
+        const unique = new Map();
+        requests.forEach(r => {
+            const existing = unique.get(r.usn);
+            if (!existing || r.createdAt > existing.createdAt) {
+                unique.set(r.usn, r);
+            }
+        });
+
+        return Array.from(unique.values());
     } catch (e) {
         console.error("Error fetching requests:", e);
         return [];
@@ -139,9 +150,14 @@ async function buildMatches() {
         for (let j = i + 1; j < requests.length; j += 1) {
             const a = requests[i];
             const b = requests[j];
+
+            // Basic matching logic
             if (a.direction !== b.direction) continue;
+            if (a.usn === b.usn) continue; // No self-matching
+
             const maxWindow = 20 + Math.min(a.waitMinutes, b.waitMinutes);
             if (minutesDiff(new Date(a.time), new Date(b.time)) > maxWindow) continue;
+
             matches.push({
                 id: `${a.id}-${b.id}`,
                 direction: a.direction,
@@ -514,20 +530,29 @@ app.get('/api/carpool/public-requests', apiLimiter, requireCarpoolSession, async
     }
 });
 
-app.get('/api/carpool/matches', apiLimiter, async (req, res) => {
+app.get('/api/carpool/matches', apiLimiter, requireCarpoolSession, async (req, res) => {
     try {
-        const matches = await buildMatches();
-        const count = await getActiveRequestsCount();
+        const allMatches = await buildMatches();
+        const myRequests = await db.collection('carpool_requests').where('usn', '==', req.carpoolUser.usn).get();
+        const myRequestIds = myRequests.docs.map(d => d.id);
+
+        const filtered = allMatches.filter(m =>
+            m.users.some(u => u.usn === req.carpoolUser.usn)
+        );
+
         res.json({
-            matches: matches.map(match => ({
-                id: match.id,
-                direction: match.direction,
-                time: match.time,
-                wait: match.wait,
-                name: match.users[1].name || `Student ${match.users[1].usn.slice(-4)}`
-            })),
-            activeRequests: count,
-            matchCount: matches.length
+            matches: filtered.map(match => {
+                const other = match.users.find(u => u.usn !== req.carpoolUser.usn) || match.users[1];
+                return {
+                    id: match.id,
+                    direction: match.direction,
+                    time: match.time,
+                    wait: match.wait,
+                    name: other.name || `Student ${other.usn.slice(-4)}`
+                };
+            }),
+            activeRequests: await getActiveRequestsCount(),
+            matchCount: filtered.length
         });
     } catch (e) {
         res.status(500).json({ error: 'Error' });
