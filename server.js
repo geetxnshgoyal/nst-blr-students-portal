@@ -739,15 +739,28 @@ app.get('/api/carpool/stream', apiLimiter, (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
     sseClients.add(res);
-    getActiveRequestsCount().then(count => {
+    // Send initial state immediately
+    (async () => {
+        const [matches, requests] = await Promise.all([buildMatches(), fetchActiveRequests()]);
         res.write(`data: ${JSON.stringify({
-            matches: [],
-            activeRequests: count,
-            matchCount: 0
+            matches: matches.map(m => ({
+                id: m.id,
+                direction: m.direction,
+                time: m.time,
+                wait: m.wait,
+                name: `Student ${m.users[1].usn.slice(-4)}`
+            })),
+            activeRequests: requests.length,
+            publicRequests: requests.map(r => ({
+                id: r.id,
+                name: r.name || `Student ${r.usn.slice(-4)}`,
+                photo: r.photo,
+                direction: r.direction,
+                time: r.time,
+                flightCode: r.flightCode
+            }))
         })}\n\n`);
-    });
-    // publishMatches(); // don't block
-
+    })();
 
     const keepAlive = setInterval(() => res.write(': keep-alive\n\n'), 20000);
     req.on('close', () => {
