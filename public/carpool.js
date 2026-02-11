@@ -10,6 +10,7 @@ let state = {
     photo: localStorage.getItem('cp_photo') || null,
     direction: null, // 'hostel' or 'airport'
     requestId: localStorage.getItem('cp_req_id') || null,
+    requestTime: null, // Store my requested time for wait logic
     matches: []
 };
 
@@ -325,7 +326,10 @@ async function fetchPublicRequests() {
 
             if (state.requestId) {
                 const myReq = reqs.find(r => r.id === state.requestId);
-                if (myReq) renderMyRequest(myReq);
+                if (myReq) {
+                    state.requestTime = myReq.time;
+                    renderMyRequest(myReq);
+                }
             }
         }
     } catch (e) {
@@ -454,28 +458,38 @@ async function fetchMatches() {
 }
 
 
-const funnyMessages = [
-    (user, match, mins) => mins > 20
-        ? `Hey ${user}, you've got ${mins} mins! Grab a Chole Bhature till ${match} arrives. 🥘`
-        : `Hey ${user}, grab a quick Chai while you wait ${mins} mins for ${match}. ☕`,
-    (user, match, mins) => `Perfect! You can scroll Reels for ${mins} mins while ${match} lands. 📱`,
-    (user, match, mins) => `${match} is arriving in ${mins} mins! Find a pillar to lean on and look cool. �️`,
-    (user, match, mins) => `Sweet! You have ${mins} mins to plan which side of the car you're taking. 🚗`,
-    (user, match, mins) => `Stay hydrated, ${user}! You've got ${mins} mins before ${match} joins the ride. 🥤`,
-    (user, match, mins) => `Patience is a virtue, and you've got ${mins} mins of it till ${match} shows up! 🧘`,
-    (user, match, mins) => `You could probably finish a whole episode of a sitcom in these ${mins} mins! �`,
-    (user, match, mins) => `Time for a quick power nap? You've got ${mins} mins! 😴`,
-    (user, match, mins) => `Check your flight status one last time! Still ${mins} mins to go for ${match}. ✈️`,
-    (user, match, mins) => `Hey ${user}, ${match} is only ${mins} mins away. Get your UPI ready for the toll! �`
-];
+const funnyMessages = {
+    userWaiting: [
+        (user, match, mins) => `Hey ${user}, you've got ${mins} mins! Grab a Chole Bhature till ${match} arrives. 🥘`,
+        (user, match, mins) => `Perfect! You can scroll Reels for ${mins} mins while ${match} lands. 📱`,
+        (user, match, mins) => `${match} is joining you in ${mins} mins! Stay hydrated, ${user}. 🥤`,
+        (user, match, mins) => `You've got ${mins} mins! Maybe a quick power nap before ${match} shows up? �`,
+        (user, match, mins) => `Tell ${match} you're waiting! You've got ${mins} mins to kill. ⏳`
+    ],
+    matchWaiting: [
+        (user, match, mins) => `${match} is early! Tell them to grab Chole Bhature for ${mins} mins till you arrive. �`,
+        (user, match, mins) => `${match} has ${mins} mins to scroll Reels while you land. 📱`,
+        (user, match, mins) => `Don't rush, ${user}! ${match} is early and waiting ${mins} mins for you. 🧘`,
+        (user, match, mins) => `${match} is already there! They've got ${mins} mins to count floor tiles. 🔢`,
+        (user, match, mins) => `Hey ${user}, ${match} is early. Tell them to find a charging point for ${mins} mins! ⚡`
+    ]
+};
 
-function getFunnyMessage(matchFullName, waitStr) {
+function getFunnyMessage(matchFullName, matchTimeStr) {
     const user = (state.name || 'Student').split(' ')[0];
     const match = matchFullName.split(' ')[0];
-    const minsMatch = waitStr.match(/\d+/);
-    const mins = minsMatch ? parseInt(minsMatch[0]) : 15;
-    const index = Math.floor(Math.random() * funnyMessages.length);
-    return funnyMessages[index](user, match, mins);
+
+    // Logic: Compare my request time vs match request time
+    const myTime = new Date(state.requestTime);
+    const otherTime = new Date(matchTimeStr);
+    const diffMins = Math.round(Math.abs(myTime - otherTime) / 60000);
+
+    // If other arrives LATER, I am waiting for them
+    const isUserWaiting = otherTime > myTime;
+    const pool = isUserWaiting ? funnyMessages.userWaiting : funnyMessages.matchWaiting;
+    const index = Math.floor(Math.random() * pool.length);
+
+    return pool[index](user, match, diffMins || 15);
 }
 
 function renderMatches(matches) {
@@ -493,11 +507,12 @@ function renderMatches(matches) {
         return;
     }
 
+    const timeOptions = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true };
+
     matches.forEach(m => {
         const date = new Date(m.time);
-        const timeOptions = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true };
         const timeStr = date.toLocaleTimeString('en-IN', timeOptions);
-        const funnyNote = getFunnyMessage(m.name, m.wait);
+        const funnyNote = getFunnyMessage(m.name, m.time);
 
         const el = document.createElement('div');
         el.className = 'match-item';
