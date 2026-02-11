@@ -102,7 +102,7 @@ function minutesDiff(a, b) {
 let carpoolCache = {
     requests: null,
     lastUpdate: 0,
-    TTL: 30 * 1000 // 30 seconds
+    TTL: 120 * 1000 // 2 minutes
 };
 
 function invalidateCarpoolCache() {
@@ -226,7 +226,9 @@ async function getActiveRequestsCount() {
 
 async function publishMatches() {
     const matches = await buildMatches();
-    const count = await getActiveRequestsCount();
+    const requests = await fetchActiveRequests();
+    const count = requests.length;
+
     const payload = JSON.stringify({
         matches: matches.map(match => ({
             id: match.id,
@@ -236,7 +238,15 @@ async function publishMatches() {
             name: `Student ${match.users[1].usn.slice(-4)}`
         })),
         activeRequests: count,
-        matchCount: matches.length
+        // Include public requests in SSE to save extra GET calls
+        publicRequests: requests.map(r => ({
+            id: r.id,
+            name: r.name || `Student ${r.usn.slice(-4)}`,
+            photo: r.photo,
+            direction: r.direction,
+            time: r.time,
+            flightCode: r.flightCode
+        }))
     });
     for (const res of sseClients) {
         res.write(`data: ${payload}\n\n`);
@@ -362,13 +372,20 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
         usn = usn.trim().toUpperCase();
         console.log(`[OTP Request] USN: ${usn}, IP: ${req.ip}, Time: ${new Date().toISOString()}`);
 
-        // Per-USN Cooldown (60s)
-        const lastRequested = otpRateLimit.get(usn);
-        if (lastRequested && (Date.now() - lastRequested < 60000)) {
-            const wait = Math.ceil((60000 - (Date.now() - lastRequested)) / 1000);
-            return res.status(429).json({ error: `Please wait ${wait}s before requesting again.` });
+        // Shared Rate Limit check via Firestore (Vercel friendly)
+        if (db) {
+            try {
+                const lastOtpDoc = await db.collection('otps').doc(usn).get();
+                if (lastOtpDoc.exists) {
+                    const lastData = lastOtpDoc.data();
+                    const lastTime = lastData.createdAt?.toMillis() || 0;
+                    if (Date.now() - lastTime < 60000) {
+                        const wait = Math.ceil((60000 - (Date.now() - lastTime)) / 1000);
+                        return res.status(429).json({ error: `Please wait ${wait}s before requesting again.` });
+                    }
+                }
+            } catch (err) { console.error("Rate limit check fail:", err); }
         }
-        otpRateLimit.set(usn, Date.now());
 
         // 1. Check Cache (Instant)
         let studentData = studentCache.get(usn);
@@ -376,18 +393,15 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
         // 2. Try Firestore if not in cache or to refresh data
         if (db) {
             try {
-                // Short timeout for DB lookup to keep UI snappy
                 const doc = await db.collection('students').doc(usn).get();
                 if (doc.exists) {
                     studentData = { ...(studentData || {}), ...doc.data() };
                     studentCache.set(usn, studentData); // Refresh cache
                 }
-            } catch (e) {
-                console.warn("Firestore lookup failed, relying on cache/defaults.");
-            }
+            } catch (e) { console.warn("Firestore student lookup failed"); }
         }
 
-        if (!studentData && !usn.startsWith('21')) { // Basic USN validation if totally unknown
+        if (!studentData && !usn.startsWith('21')) {
             return res.status(404).json({ error: 'Student not found.' });
         }
 
@@ -396,7 +410,19 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
         const photo = studentData?.photo || '';
 
         const otp = String(Math.floor(100000 + Math.random() * 900000));
-        otpStore.set(usn, { otp, email, name, photo, expiresAt: Date.now() + 20 * 60 * 1000 }); // Extended to 20m
+
+        // Save to Firestore so all Vercel instances see it
+        if (db) {
+            try {
+                await db.collection('otps').doc(usn).set({
+                    otp, email, name, photo,
+                    expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 20 * 60 * 1000),
+                    createdAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (err) { console.error("Firestore OTP save fail:", err); }
+        }
+
+        otpStore.set(usn, { otp, email, name, photo, expiresAt: Date.now() + 20 * 60 * 1000 });
 
         if (mailer) {
             await mailer.sendMail({
@@ -405,7 +431,8 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
                 subject: 'NST Carpool OTP',
                 text: `Your NST carpool OTP is ${otp}. It expires in 20 minutes.`
             });
-        } else {
+        }
+        else {
             console.log(`[DEV] OTP for ${usn}: ${otp}`);
         }
 
@@ -420,9 +447,20 @@ app.post('/api/carpool/verify-otp', apiLimiter, async (req, res) => {
     let { usn, otp } = req.body || {};
     if (!usn || !otp) return res.status(400).json({ error: 'USN and OTP required' });
     usn = usn.trim().toUpperCase();
-    const entry = otpStore.get(usn);
+    let entry = otpStore.get(usn);
+
+    // Check Firestore if not in memory (Vercel support)
+    if (!entry && db) {
+        try {
+            const doc = await db.collection('otps').doc(usn).get();
+            if (doc.exists) {
+                const data = doc.data();
+                entry = { ...data, expiresAt: data.expiresAt?.toMillis() || 0 };
+            }
+        } catch (err) { console.error("Firestore OTP verify lookup fail:", err); }
+    }
+
     if (!entry) {
-        console.log(`OTP fail: ${usn} not found in store. Store size: ${otpStore.size}`);
         return res.status(400).json({ error: 'OTP not found. Please request a new one.' });
     }
     if (entry.expiresAt <= Date.now()) {

@@ -338,20 +338,38 @@ document.getElementById('cancel-request-btn').addEventListener('click', async ()
 
 
 // Matching/Board Logic
-// Matching/Board Logic
 function startDashboardServices() {
-    // Poll matches if we have a request
-    if (state.requestId) fetchMatches();
-    // Always poll public board
+    // Initial loads
     fetchPublicRequests();
+    if (state.requestId) fetchMatches();
 
-    // Clear existing interval if any (to avoid duplicates on re-login)
-    if (window.dashboardInterval) clearInterval(window.dashboardInterval);
+    // Use SSE for real-time updates instead of polling
+    if (window.cpEventSource) window.cpEventSource.close();
 
-    window.dashboardInterval = setInterval(() => {
+    window.cpEventSource = new EventSource(`${API_BASE}/stream`);
+
+    window.cpEventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const countEl = document.getElementById('public-count');
+        if (countEl) countEl.textContent = data.activeRequests || 0;
+
+        if (data.publicRequests) {
+            renderPublicBoard(data.publicRequests);
+            if (state.requestId) {
+                const myReq = data.publicRequests.find(r => r.id === state.requestId);
+                if (myReq) renderMyRequest(myReq);
+            }
+        } else {
+            fetchPublicRequests();
+        }
         if (state.requestId) fetchMatches();
-        fetchPublicRequests();
-    }, 5000);
+    };
+
+    window.cpEventSource.onerror = (err) => {
+        console.warn("SSE Error, retrying...", err);
+        window.cpEventSource.close();
+        // Fallback or retry logic if needed
+    };
 }
 
 async function fetchPublicRequests() {
