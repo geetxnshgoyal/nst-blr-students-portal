@@ -243,6 +243,7 @@ forms.trip.addEventListener('submit', async (e) => {
 
         if (data.success) {
             state.requestId = data.requestId;
+            state.requestTime = payload.time; // Set immediately for wait logic
             localStorage.setItem('cp_req_id', state.requestId);
             showBoard();
         } else {
