@@ -157,7 +157,7 @@ forms.login.addEventListener('submit', async (e) => {
             setStatus(status.login, data.error || 'Student not found', 'error');
         }
     } catch (err) {
-        setStatus(status.login, 'Network Error', 'error');
+        setStatus(status.logiƒn, 'Network Error', 'error');
     } finally {
         btn.disabled = false;
     }
@@ -279,6 +279,11 @@ forms.trip.addEventListener('submit', async (e) => {
         waitMinutes: inputs.wait.value
     };
 
+    const btn = forms.trip.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span>Joining...</span>';
+
     try {
         const res = await fetch(`${API_BASE}/requests`, {
             method: 'POST',
@@ -299,7 +304,10 @@ forms.trip.addEventListener('submit', async (e) => {
             alert(data.error);
         }
     } catch (err) {
-        alert('Failed to creates request');
+        alert('Failed to create request');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     }
 });
 

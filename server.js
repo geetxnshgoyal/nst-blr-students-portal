@@ -39,6 +39,7 @@ try {
 const db = admin.apps.length ? admin.firestore() : null;
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Vercel)
 const PORT = process.env.PORT || 3000;
 
 // Internal Cache for speed
@@ -126,18 +127,34 @@ async function fetchActiveRequests() {
             .orderBy('time', 'asc')
             .get();
 
-        const requests = snapshot.docs.map(doc => doc.data());
-
-        // Deduplicate by USN - Keep the most recently created request if multiple exist
+        const allDocs = snapshot.docs;
         const unique = new Map();
-        requests.forEach(r => {
-            const existing = unique.get(r.usn);
-            if (!existing || r.createdAt > existing.createdAt) {
-                unique.set(r.usn, r);
+        const toDelete = [];
+
+        allDocs.forEach(doc => {
+            const data = doc.data();
+            const usn = data.usn;
+            const existing = unique.get(usn);
+
+            if (!existing || data.createdAt > existing.data.createdAt) {
+                if (existing) toDelete.push(existing.id); // Old one we don't want
+                unique.set(usn, { id: doc.id, data: data });
+            } else {
+                toDelete.push(doc.id); // This one is older or redundant
             }
         });
 
-        const result = Array.from(unique.values());
+        // Auto-delete duplicates from Firebase if caught
+        if (toDelete.length > 0) {
+            console.log(`[CLEANUP] Found ${toDelete.length} duplicates. Deleting...`);
+            const batch = db.batch();
+            toDelete.forEach(id => {
+                batch.delete(db.collection('carpool_requests').doc(id));
+            });
+            await batch.commit();
+        }
+
+        const result = Array.from(unique.values()).map(item => item.data);
 
         // Update cache
         carpoolCache.requests = result;
@@ -425,14 +442,18 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
         otpStore.set(usn, { otp, email, name, photo, expiresAt: Date.now() + 20 * 60 * 1000 });
 
         if (mailer) {
-            await mailer.sendMail({
-                from: process.env.SMTP_FROM || process.env.SMTP_USER,
-                to: email,
-                subject: 'NST Carpool OTP',
-                text: `Your NST carpool OTP is ${otp}. It expires in 20 minutes.`
-            });
-        }
-        else {
+            try {
+                await mailer.sendMail({
+                    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+                    to: email,
+                    subject: 'NST Carpool OTP',
+                    text: `Your NST carpool OTP is ${otp}. It expires in 20 minutes.`
+                });
+                console.log(`[Email Sent] OTP for USN: ${usn} sent to: ${email}`);
+            } catch (err) {
+                console.error("Mail send fail:", err);
+            }
+        } else {
             console.log(`[DEV] OTP for ${usn}: ${otp}`);
         }
 
@@ -565,23 +586,25 @@ app.post('/api/carpool/requests', apiLimiter, requireCarpoolSession, async (req,
     const parsedTime = new Date(istTime);
     if (Number.isNaN(parsedTime.getTime())) return res.status(400).json({ error: 'Invalid time' });
     const request = {
-        id: makeToken(),
+        id: makeToken(), // Random ID for the request entry
         usn: req.carpoolUser.usn,
         email: req.carpoolUser.email,
         name: req.carpoolUser.name,
         photo: req.carpoolUser.photo,
         direction,
         flightCode: (flightCode || '').trim(),
-        time: parsedTime.toISOString(), // Save as string in DB
+        time: parsedTime.toISOString(),
         waitMinutes: Math.max(0, Number(waitMinutes || 0)),
         createdAt: Date.now()
     };
 
-    // Save to Firestore
+    // Save to Firestore - USE USN AS ID TO PREVENT DUPLICATES
     if (db) {
         try {
-            await db.collection('carpool_requests').doc(request.id).set(request);
-            invalidateCarpoolCache(); // Clear cache on new request
+            // We use USN as the document ID so one student = one active request.
+            // If they submit again, it just updates their existing request.
+            await db.collection('carpool_requests').doc(req.carpoolUser.usn).set(request);
+            invalidateCarpoolCache();
         } catch (e) {
             console.error("Request save error", e);
             return res.status(500).json({ error: 'Database error' });
