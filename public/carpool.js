@@ -11,7 +11,8 @@ let state = {
     direction: null, // 'hostel' or 'airport'
     requestId: localStorage.getItem('cp_req_id') || null,
     requestTime: null, // Store my requested time for wait logic
-    matches: []
+    matches: [],
+    resendTimer: 0
 };
 
 
@@ -151,12 +152,60 @@ forms.login.addEventListener('submit', async (e) => {
             document.getElementById('email-hint').textContent = data.message.split('to ')[1] || '...';
             forms.login.classList.remove('active');
             forms.otp.classList.add('active');
+            startResendTimer();
         } else {
             setStatus(status.login, data.error || 'Student not found', 'error');
         }
     } catch (err) {
         setStatus(status.login, 'Network Error', 'error');
     } finally {
+        btn.disabled = false;
+    }
+});
+
+function startResendTimer() {
+    state.resendTimer = 30;
+    const btn = document.getElementById('resend-otp-btn');
+    const timerDisplay = document.getElementById('resend-timer');
+
+    btn.disabled = true;
+
+    if (window.resendInterval) clearInterval(window.resendInterval);
+
+    window.resendInterval = setInterval(() => {
+        state.resendTimer -= 1;
+        timerDisplay.textContent = `(${state.resendTimer}s)`;
+
+        if (state.resendTimer <= 0) {
+            clearInterval(window.resendInterval);
+            timerDisplay.textContent = '';
+            btn.disabled = false;
+        }
+    }, 1000);
+}
+
+document.getElementById('resend-otp-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('resend-otp-btn');
+    btn.disabled = true;
+    setStatus(status.otp, 'Resending OTP...', 'neutral');
+
+    try {
+        const res = await fetch(`${API_BASE}/request-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usn: state.usn })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            setStatus(status.otp, 'OTP Resent!', 'neutral');
+            startResendTimer();
+        } else {
+            setStatus(status.otp, data.error, 'error');
+            btn.disabled = false;
+        }
+    } catch (err) {
+        setStatus(status.otp, 'Failed to resend OTP', 'error');
         btn.disabled = false;
     }
 });
