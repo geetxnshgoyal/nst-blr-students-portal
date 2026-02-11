@@ -480,10 +480,20 @@ function getFunnyMessage(matchFullName, matchTimeStr) {
     const user = (state.name || 'Student').split(' ')[0];
     const match = matchFullName.split(' ')[0];
 
-    // Logic: Compare my request time vs match request time
+    // Safety check: if timestamps are missing, avoid epoch-based huge numbers
+    if (!state.requestTime || !matchTimeStr) {
+        const index = Math.floor(Math.random() * funnyMessages.userWaiting.length);
+        return funnyMessages.userWaiting[index](user, match, 15);
+    }
+
     const myTime = new Date(state.requestTime);
     const otherTime = new Date(matchTimeStr);
-    const diffMins = Math.round(Math.abs(myTime - otherTime) / 60000);
+
+    // Calculate difference in minutes
+    let diffMins = Math.round(Math.abs(myTime - otherTime) / 60000);
+
+    // Bounds check to prevent absurdly large numbers (e.g. > 1 day)
+    if (diffMins > 1440 || isNaN(diffMins)) diffMins = 15;
 
     // If other arrives LATER, I am waiting for them
     const isUserWaiting = otherTime > myTime;
