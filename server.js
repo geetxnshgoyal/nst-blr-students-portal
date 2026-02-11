@@ -386,7 +386,7 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
         const photo = studentData?.photo || '';
 
         const otp = String(Math.floor(100000 + Math.random() * 900000));
-        otpStore.set(usn, { otp, email, name, photo, expiresAt: Date.now() + 10 * 60 * 1000 });
+        otpStore.set(usn, { otp, email, name, photo, expiresAt: Date.now() + 20 * 60 * 1000 }); // Extended to 20m
 
         if (mailer) {
             await mailer.sendMail({
@@ -411,7 +411,14 @@ app.post('/api/carpool/verify-otp', apiLimiter, async (req, res) => {
     if (!usn || !otp) return res.status(400).json({ error: 'USN and OTP required' });
     usn = usn.trim().toUpperCase();
     const entry = otpStore.get(usn);
-    if (!entry || entry.expiresAt <= Date.now()) return res.status(400).json({ error: 'OTP expired' });
+    if (!entry) {
+        console.log(`OTP fail: ${usn} not found in store. Store size: ${otpStore.size}`);
+        return res.status(400).json({ error: 'OTP not found. Please request a new one.' });
+    }
+    if (entry.expiresAt <= Date.now()) {
+        otpStore.delete(usn);
+        return res.status(400).json({ error: 'OTP expired. Please request a new one.' });
+    }
     if (entry.otp !== otp) return res.status(400).json({ error: 'OTP invalid' });
     const token = makeToken();
     const sessionData = {
