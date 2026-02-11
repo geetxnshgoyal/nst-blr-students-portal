@@ -97,6 +97,18 @@ function minutesDiff(a, b) {
 }
 
 // Helper to fetch active requests from Firestore
+// In-memory cache to stay within Firebase free tier limits
+let carpoolCache = {
+    requests: null,
+    lastUpdate: 0,
+    TTL: 30 * 1000 // 30 seconds
+};
+
+function invalidateCarpoolCache() {
+    carpoolCache.requests = null;
+    carpoolCache.lastUpdate = 0;
+}
+
 async function fetchActiveRequests() {
     if (!db) return [];
     try {
@@ -130,7 +142,30 @@ function cleanOldEntries() {
         if (entry.expiresAt <= now) otpStore.delete(usn);
     }
 }
-setInterval(cleanOldEntries, 60 * 60 * 1000); // Clean every hour
+
+async function cleanupCarpoolRequests() {
+    if (!db) return;
+    try {
+        // Delete requests that are more than 1 hour past their scheduled time
+        const cutoff = new Date(Date.now() - (1 * 60 * 60 * 1000)).toISOString();
+        const expired = await db.collection('carpool_requests')
+            .where('time', '<=', cutoff)
+            .get();
+
+        if (expired.empty) return;
+
+        const batch = db.batch();
+        expired.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        console.log(`[CLEANUP] Removed ${expired.size} expired carpool requests.`);
+    } catch (e) {
+        console.error("Cleanup error:", e);
+    }
+}
+
+setInterval(cleanOldEntries, 15 * 60 * 1000); // Clean OTP store every 15 mins
+setInterval(cleanupCarpoolRequests, 30 * 60 * 1000); // Clean Firestore every 30 mins
+cleanupCarpoolRequests(); // Run once at start
 
 // Helper to fetch session
 async function getSession(token) {

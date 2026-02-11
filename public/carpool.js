@@ -358,7 +358,7 @@ function renderMyRequest(r) {
                     ${timeStr}
                 </div>
                 <div style="font-size: 0.9rem; opacity: 0.7; font-weight: 500;">
-                    ${dateStr} ${r.flightCode ? '• ' + r.flightCode : ''}
+                    ${dateStr}${r.flightCode && r.flightCode !== 'No Flight #' ? ' • ' + r.flightCode : ''}
                 </div>
             </div>
             <div style="text-align: right;">
@@ -420,7 +420,7 @@ function renderPublicBoard(requests) {
                     <img src="${r.photo || ''}" onerror="this.style.display='none'" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                     <div>
                         <div style="font-weight:bold; color:white; font-size:0.95rem;">${r.name}</div>
-                        <div class="match-flight" style="font-size:0.8rem; opacity:0.8;">${icon} ${directionLabel}${r.flightCode ? ' • ' + r.flightCode : ''}</div>
+                        <div class="match-flight" style="font-size:0.8rem; opacity:0.8;">${icon} ${directionLabel}${r.flightCode && r.flightCode !== 'No Flight #' ? ' • ' + r.flightCode : ''}</div>
                     </div>
                 </div>
                 <div class="match-time" style="text-align:right;">
@@ -453,6 +453,23 @@ async function fetchMatches() {
     }
 }
 
+
+const funnyMessages = [
+    (name, mins) => `Tell ${name} to grab a Chole Bhature for ${mins} mins till you arrive! 🥘`,
+    (name, mins) => `Perfect! ${name} can scroll Reels for ${mins} mins while you land. 📱`,
+    (name, mins) => `${name} is early! Tell them to wait near the pillar and not look suspicious. 🕵️`,
+    (name, mins) => `Sweet! ${name} has ${mins} mins to reconsider their life choices before you arrive. 🧘`,
+    (name, mins) => `${name} is coming! Tell them to stay hydrated for that ${mins} min wait. 🥤`,
+    (name, mins) => `Matched! ${name} will be waiting with a bouquet... of patience. 💐`
+];
+
+function getFunnyMessage(fullName, waitStr) {
+    const name = fullName.split(' ')[0];
+    const mins = waitStr.match(/\d+/) ? waitStr.match(/\d+/)[0] : 'a few';
+    const index = Math.floor(Math.random() * funnyMessages.length);
+    return funnyMessages[index](name, mins);
+}
+
 function renderMatches(matches) {
     const list = document.getElementById('matches-list');
     list.innerHTML = '';
@@ -471,27 +488,33 @@ function renderMatches(matches) {
     matches.forEach(m => {
         const date = new Date(m.time);
         const timeStr = date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+        const funnyNote = getFunnyMessage(m.name, m.wait);
 
         const el = document.createElement('div');
         el.className = 'match-item';
-        el.style.borderLeft = '4px solid var(--neon-blue)';
+        el.style.borderLeft = '4px solid var(--primary-light)';
         el.innerHTML = `
-            <div class="match-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div>
-                    <div style="font-weight:bold; color:white; font-size:1.1rem;">${m.name}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); text-transform:uppercase; font-weight:700; margin-top:2px;">
-                        ${m.direction} • ${m.window}
+            <div class="match-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                <div style="flex:1;">
+                    <div style="font-weight:bold; color:white; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                        ${m.name}
+                        <span style="font-size:0.7rem; background:rgba(0,255,136,0.1); color:var(--success); padding:2px 8px; border-radius:10px; text-transform:uppercase;">Match</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); font-weight:500; margin-top:4px; line-height:1.4; font-style: italic;">
+                        "${funnyNote}"
                     </div>
                 </div>
-                <div style="text-align:right;">
+                <div style="text-align:right; min-width:80px;">
                     <div style="color: var(--primary-light); font-weight: 800; font-size: 1.25rem;">${timeStr}</div>
-                    <div style="font-size: 0.75rem; opacity:0.6;">${m.wait}</div>
+                    <div style="font-size: 0.7rem; opacity:0.7; font-weight:600; text-transform:uppercase; margin-top:2px;">
+                        ${m.direction}
+                    </div>
                 </div>
             </div>
-            <div class="match-actions" style="margin-top:12px;">
-                <button class="btn-small btn-neon" onclick="acceptMatch('${m.id}')">
-                    <span>Connect Request</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <div class="match-actions" style="margin-top:20px;">
+                <button class="btn-small btn-premium-neon" style="width:100%; justify-content:center; padding:14px;" onclick="acceptMatch('${m.id}')">
+                    <span>Connect with ${m.name.split(' ')[0]}</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M5 12h14M12 5l7 7-7 7"/>
                     </svg>
                 </button>
