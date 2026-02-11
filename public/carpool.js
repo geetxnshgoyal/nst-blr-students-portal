@@ -467,6 +467,8 @@ function renderPublicBoard(requests) {
         const card = document.createElement('div');
         card.className = 'match-item'; // Reuse styling
         card.style.background = 'rgba(255, 255, 255, 0.03)';
+        // Color code based on direction
+        card.style.borderLeft = isAirport ? '4px solid var(--neon-purple)' : '4px solid var(--success)';
 
         card.innerHTML = `
             <div class="match-header" style="align-items: center;">

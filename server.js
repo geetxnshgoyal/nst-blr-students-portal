@@ -73,6 +73,7 @@ let storedPasswordHash = null;
 })();
 
 const otpStore = new Map();
+const otpRateLimit = new Map(); // Simple per-USN rate limit map
 // Removed in-memory carpoolSessions and carpoolRequests in favor of Firestore
 const sseClients = new Set();
 
@@ -359,6 +360,15 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
         let { usn } = req.body || {};
         if (!usn) return res.status(400).json({ error: 'USN required' });
         usn = usn.trim().toUpperCase();
+        console.log(`[OTP Request] USN: ${usn}, IP: ${req.ip}, Time: ${new Date().toISOString()}`);
+
+        // Per-USN Cooldown (60s)
+        const lastRequested = otpRateLimit.get(usn);
+        if (lastRequested && (Date.now() - lastRequested < 60000)) {
+            const wait = Math.ceil((60000 - (Date.now() - lastRequested)) / 1000);
+            return res.status(429).json({ error: `Please wait ${wait}s before requesting again.` });
+        }
+        otpRateLimit.set(usn, Date.now());
 
         // 1. Check Cache (Instant)
         let studentData = studentCache.get(usn);
@@ -393,7 +403,7 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
                 from: process.env.SMTP_FROM || process.env.SMTP_USER,
                 to: email,
                 subject: 'NST Carpool OTP',
-                text: `Your NST carpool OTP is ${otp}. It expires in 10 minutes.`
+                text: `Your NST carpool OTP is ${otp}. It expires in 20 minutes.`
             });
         } else {
             console.log(`[DEV] OTP for ${usn}: ${otp}`);

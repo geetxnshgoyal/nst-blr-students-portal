@@ -204,5 +204,4 @@ window.addEventListener('scroll', () => {
     lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
 });
 
-setInterval(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (e) { } }, 1000);
 window.addEventListener('beforeunload', () => { authToken = null; students = []; try { localStorage.clear(); sessionStorage.clear(); } catch (e) { } });
