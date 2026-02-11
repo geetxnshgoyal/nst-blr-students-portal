@@ -349,20 +349,20 @@ function renderMyRequest(r) {
     const label = isAirport ? 'Heading to Airport' : 'Coming to Hostel';
 
     card.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
             <div>
-                <div style="font-size: 0.75rem; color: var(--primary-light); font-weight: 800; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 1px;">
-                    ${icon} ${label}
+                <div style="font-size: 0.75rem; color: var(--primary-light); font-weight: 900; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1.5px; display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:1.2rem;">${icon}</span> ${label}
                 </div>
-                <div style="font-size: 1.75rem; font-weight: 800; color: white; line-height: 1.2;">
+                <div style="font-size: 2.25rem; font-weight: 900; color: white; line-height: 1; margin-bottom: 8px; letter-spacing: -1px;">
                     ${timeStr}
                 </div>
-                <div style="font-size: 0.9rem; opacity: 0.7; font-weight: 500;">
-                    ${dateStr}${r.flightCode && r.flightCode !== 'No Flight #' ? ' • ' + r.flightCode : ''}
+                <div style="font-size: 0.95rem; color: var(--text-muted); font-weight: 600;">
+                    ${dateStr}${r.flightCode && r.flightCode !== 'No Flight #' ? ' • <span style="color:var(--primary-light)">' + r.flightCode + '</span>' : ''}
                 </div>
             </div>
             <div style="text-align: right;">
-                <div class="badge-live">Live</div>
+                <div class="badge-live">Live Tracking</div>
             </div>
         </div>
     `;
