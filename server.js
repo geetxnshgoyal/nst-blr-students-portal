@@ -13,28 +13,67 @@ const admin = require('firebase-admin');
 // Initialize Firebase Admin
 try {
     if (!admin.apps.length) {
-        admin.initializeApp({
-            credential: admin.credential.applicationDefault()
-        });
+        const projectId = process.env.FIREBASE_PROJECT_ID;
+        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+        const privateKey = process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined;
+
+        if (projectId && clientEmail && privateKey) {
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId,
+                    clientEmail,
+                    privateKey,
+                }),
+            });
+            console.log("Firebase Admin initialized with service account.");
+        } else {
+            console.warn("Firebase credentials missing in .env. Using applicationDefault().");
+            admin.initializeApp({
+                credential: admin.credential.applicationDefault()
+            });
+        }
     }
 } catch (e) {
-    console.warn("Firebase Admin Init Warning:", e.message);
+    console.error("Firebase Admin Init Error:", e.message);
 }
 const db = admin.apps.length ? admin.firestore() : null;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Internal Cache for speed
+let studentCache = new Map();
+
+async function seedStudentCache() {
+    if (!db) {
+        console.warn("DB not ready, skipping student cache seed.");
+        return;
+    }
+    try {
+        console.log("Seeding student cache from Firestore...");
+        const snapshot = await db.collection('students').get();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const usn = String(data.usn || doc.id).toUpperCase();
+            studentCache.set(usn, data);
+        });
+        console.log(`Successfully cached ${studentCache.size} students from Firestore.`);
+    } catch (e) {
+        console.error("Error seeding student cache:", e.message);
+    }
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || require('crypto').randomBytes(64).toString('hex');
 
 let storedPasswordHash = null;
 
 (async () => {
     storedPasswordHash = await bcrypt.hash('123456778', 12);
+    await seedStudentCache();
 })();
 
 const otpStore = new Map();
-const carpoolSessions = new Map();
-const carpoolRequests = [];
+// Removed in-memory carpoolSessions and carpoolRequests in favor of Firestore
 const sseClients = new Set();
 
 const smtpConfig = {
@@ -57,30 +96,52 @@ function minutesDiff(a, b) {
     return Math.abs(a.getTime() - b.getTime()) / 60000;
 }
 
+// Helper to fetch active requests from Firestore
+async function fetchActiveRequests() {
+    if (!db) return [];
+    try {
+        // Keep requests visible for 2 hours after their scheduled time 
+        // (to allow for landing, baggage, and meeting up)
+        const cutoff = new Date(Date.now() - (2 * 60 * 60 * 1000)).toISOString();
+        const snapshot = await db.collection('carpool_requests')
+            .where('time', '>', cutoff)
+            .get();
+        return snapshot.docs.map(doc => doc.data());
+    } catch (e) {
+        console.error("Error fetching requests:", e);
+        return [];
+    }
+}
+
 function cleanOldEntries() {
     const now = Date.now();
     for (const [usn, entry] of otpStore.entries()) {
         if (entry.expiresAt <= now) otpStore.delete(usn);
     }
-    for (const [token, entry] of carpoolSessions.entries()) {
-        if (entry.expiresAt <= now) carpoolSessions.delete(token);
-    }
-    const cutoff = now - (6 * 60 * 60 * 1000);
-    while (carpoolRequests.length && carpoolRequests[0].createdAt < cutoff) {
-        carpoolRequests.shift();
+}
+setInterval(cleanOldEntries, 60 * 60 * 1000); // Clean every hour
+
+// Helper to fetch session
+async function getSession(token) {
+    if (!db) return null;
+    try {
+        const doc = await db.collection('carpool_sessions').doc(token).get();
+        return doc.exists ? doc.data() : null;
+    } catch (e) {
+        return null;
     }
 }
 
-function buildMatches() {
-    cleanOldEntries();
+async function buildMatches() {
+    const requests = await fetchActiveRequests();
     const matches = [];
-    for (let i = 0; i < carpoolRequests.length; i += 1) {
-        for (let j = i + 1; j < carpoolRequests.length; j += 1) {
-            const a = carpoolRequests[i];
-            const b = carpoolRequests[j];
+    for (let i = 0; i < requests.length; i += 1) {
+        for (let j = i + 1; j < requests.length; j += 1) {
+            const a = requests[i];
+            const b = requests[j];
             if (a.direction !== b.direction) continue;
             const maxWindow = 20 + Math.min(a.waitMinutes, b.waitMinutes);
-            if (minutesDiff(a.time, b.time) > maxWindow) continue;
+            if (minutesDiff(new Date(a.time), new Date(b.time)) > maxWindow) continue;
             matches.push({
                 id: `${a.id}-${b.id}`,
                 direction: a.direction,
@@ -93,13 +154,14 @@ function buildMatches() {
     return matches;
 }
 
-function getActiveRequestsCount() {
-    cleanOldEntries();
-    return carpoolRequests.length;
+async function getActiveRequestsCount() {
+    const requests = await fetchActiveRequests();
+    return requests.length;
 }
 
-function publishMatches() {
-    const matches = buildMatches();
+async function publishMatches() {
+    const matches = await buildMatches();
+    const count = await getActiveRequestsCount();
     const payload = JSON.stringify({
         matches: matches.map(match => ({
             id: match.id,
@@ -108,7 +170,7 @@ function publishMatches() {
             wait: match.wait,
             name: `Student ${match.users[1].usn.slice(-4)}`
         })),
-        activeRequests: getActiveRequestsCount(),
+        activeRequests: count,
         matchCount: matches.length
     });
     for (const res of sseClients) {
@@ -116,15 +178,19 @@ function publishMatches() {
     }
 }
 
-function requireCarpoolSession(req, res, next) {
+async function requireCarpoolSession(req, res, next) {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-    if (!token || !carpoolSessions.has(token)) {
-        return res.status(401).json({ error: 'Verification required' });
+
+    if (!token) return res.status(401).json({ error: 'Verification required' });
+
+    const session = await getSession(token);
+
+    if (!session) {
+        return res.status(401).json({ error: 'Session not found' });
     }
-    const session = carpoolSessions.get(token);
     if (session.expiresAt <= Date.now()) {
-        carpoolSessions.delete(token);
+        // Optional: delete from DB
         return res.status(401).json({ error: 'Verification expired' });
     }
     req.carpoolUser = session;
@@ -226,48 +292,34 @@ app.post('/api/login', authLimiter, async (req, res) => {
 
 app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
     try {
-        const { usn } = req.body || {};
+        let { usn } = req.body || {};
         if (!usn) return res.status(400).json({ error: 'USN required' });
+        usn = usn.trim().toUpperCase();
 
-        let email = null;
+        // 1. Check Cache (Instant)
+        let studentData = studentCache.get(usn);
 
-        // Fetch from Firebase
-        let name = null;
-        let photo = null;
-
+        // 2. Try Firestore if not in cache or to refresh data
         if (db) {
             try {
-                // Try query by field 'usn'
-                const snapshot = await db.collection('students').where('usn', '==', usn).limit(1).get();
-                if (!snapshot.empty) {
-                    const data = snapshot.docs[0].data();
-                    email = data.email;
-                    name = data.name;
-                    photo = data.photo;
-                } else {
-                    // Try checking if doc ID is the USN
-                    const doc = await db.collection('students').doc(usn).get();
-                    if (doc.exists) {
-                        const data = doc.data();
-                        email = data.email;
-                        name = data.name;
-                        photo = data.photo;
-                    }
+                // Short timeout for DB lookup to keep UI snappy
+                const doc = await db.collection('students').doc(usn).get();
+                if (doc.exists) {
+                    studentData = { ...(studentData || {}), ...doc.data() };
+                    studentCache.set(usn, studentData); // Refresh cache
                 }
-            } catch (err) {
-                console.error("Firebase fetch error:", err);
+            } catch (e) {
+                console.warn("Firestore lookup failed, relying on cache/defaults.");
             }
         }
 
-        // Fallback or enforcement if not found in DB
-        if (!email) {
-            email = `${usn}@svyasa-sas.edu.in`;
+        if (!studentData && !usn.startsWith('21')) { // Basic USN validation if totally unknown
+            return res.status(404).json({ error: 'Student not found.' });
         }
 
-        // Mock email sending if no mailer configured (for dev/demo)
-        if (!mailer) {
-            console.log(`[DEV MODE] OTP for ${email}: 123456`);
-        }
+        const email = studentData?.email || studentData?.institutional_email || `${usn}@svyasa-sas.edu.in`;
+        const name = studentData?.name || 'Student';
+        const photo = studentData?.photo || '';
 
         const otp = String(Math.floor(100000 + Math.random() * 900000));
         otpStore.set(usn, { otp, email, name, photo, expiresAt: Date.now() + 10 * 60 * 1000 });
@@ -280,35 +332,113 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
                 text: `Your NST carpool OTP is ${otp}. It expires in 10 minutes.`
             });
         } else {
-            console.log(`OTP for ${usn} (${email}): ${otp}`);
+            console.log(`[DEV] OTP for ${usn}: ${otp}`);
         }
 
         res.json({ success: true, message: `OTP sent to ...${email.split('@')[1]}` });
     } catch (e) {
         console.error(e);
-        res.status(500).json({ error: 'OTP send failed' });
+        res.status(500).json({ error: 'Server error' });
     }
 });
 
-app.post('/api/carpool/verify-otp', apiLimiter, (req, res) => {
-    const { usn, otp } = req.body || {};
+app.post('/api/carpool/verify-otp', apiLimiter, async (req, res) => {
+    let { usn, otp } = req.body || {};
     if (!usn || !otp) return res.status(400).json({ error: 'USN and OTP required' });
+    usn = usn.trim().toUpperCase();
     const entry = otpStore.get(usn);
     if (!entry || entry.expiresAt <= Date.now()) return res.status(400).json({ error: 'OTP expired' });
     if (entry.otp !== otp) return res.status(400).json({ error: 'OTP invalid' });
     const token = makeToken();
-    carpoolSessions.set(token, {
+    const sessionData = {
         usn,
         email: entry.email,
         name: entry.name,
         photo: entry.photo,
-        expiresAt: Date.now() + 60 * 60 * 1000
-    });
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000 // Extended session for persistence
+    };
+
+    // Save session to Firestore
+    if (db) {
+        try {
+            await db.collection('carpool_sessions').doc(token).set(sessionData);
+        } catch (e) {
+            console.error("Session save error", e);
+        }
+    }
+
     otpStore.delete(usn);
-    res.json({ success: true, token, email: entry.email, name: entry.name, photo: entry.photo });
+    res.json({
+        success: true,
+        token,
+        email: entry.email,
+        name: entry.name,
+        photo: entry.photo
+    });
 });
 
-app.post('/api/carpool/requests', apiLimiter, requireCarpoolSession, (req, res) => {
+// Admin Portal Endpoints
+app.post('/api/admin/login', authLimiter, async (req, res) => {
+    try {
+        const adminEmail = process.env.SMTP_USER;
+        if (!adminEmail) return res.status(500).json({ error: 'Admin email not configured' });
+
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        otpStore.set('admin_portal', { otp, email: adminEmail, expiresAt: Date.now() + 10 * 60 * 1000 });
+
+        if (mailer) {
+            await mailer.sendMail({
+                from: process.env.SMTP_FROM || process.env.SMTP_USER,
+                to: adminEmail,
+                subject: 'Admin Portal Access Code',
+                text: `Your Admin Portal verification code is ${otp}.`
+            });
+            res.json({ success: true, message: `Code sent to ${adminEmail}` });
+        } else {
+            console.log(`Admin OTP: ${otp}`);
+            res.json({ success: true, message: 'OTP logged to server console (Dev Mode)' });
+        }
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to send admin OTP' });
+    }
+});
+
+app.post('/api/admin/verify', authLimiter, (req, res) => {
+    const { otp } = req.body || {};
+    const entry = otpStore.get('admin_portal');
+
+    if (!entry || entry.expiresAt <= Date.now()) return res.status(400).json({ error: 'OTP expired' });
+    if (entry.otp !== otp) return res.status(400).json({ error: 'Invalid OTP' });
+
+    const token = jwt.sign({ admin: true, t: Date.now() }, JWT_SECRET, { expiresIn: '8h' });
+    otpStore.delete('admin_portal');
+    res.json({ success: true, token });
+});
+
+function authenticateAdmin(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err || !decoded.admin) return res.status(403).json({ error: 'Forbidden' });
+        req.admin = decoded;
+        next();
+    });
+}
+
+app.get('/api/admin/students', apiLimiter, authenticateAdmin, async (req, res) => {
+    try {
+        if (!db) return res.status(503).json({ error: 'Database offline' });
+        const snapshot = await db.collection('students').get();
+        const students = snapshot.docs.map(doc => doc.data());
+        res.json({ success: true, students });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch students' });
+    }
+});
+
+app.post('/api/carpool/requests', apiLimiter, requireCarpoolSession, async (req, res) => {
     const { direction, flightCode, time, waitMinutes } = req.body || {};
     if (!direction || !time) return res.status(400).json({ error: 'Direction and time required' });
     const parsedTime = new Date(time);
@@ -321,60 +451,110 @@ app.post('/api/carpool/requests', apiLimiter, requireCarpoolSession, (req, res) 
         photo: req.carpoolUser.photo,
         direction,
         flightCode: (flightCode || '').trim(),
-        time: parsedTime,
+        time: parsedTime.toISOString(), // Save as string in DB
         waitMinutes: Math.max(0, Number(waitMinutes || 0)),
         createdAt: Date.now()
     };
-    carpoolRequests.push(request);
-    publishMatches();
+
+    // Save to Firestore
+    if (db) {
+        try {
+            await db.collection('carpool_requests').doc(request.id).set(request);
+        } catch (e) {
+            console.error("Request save error", e);
+            return res.status(500).json({ error: 'Database error' });
+        }
+    }
+
+    // Publish update
+    publishMatches(); // This is async now but we don't await it to return fast
     res.json({ success: true, requestId: request.id });
 });
 
-app.get('/api/carpool/status', apiLimiter, (req, res) => {
-    const matches = buildMatches();
-    res.json({
-        activeRequests: getActiveRequestsCount(),
-        matchCount: matches.length
-    });
+app.get('/api/carpool/status', apiLimiter, async (req, res) => {
+    try {
+        const matches = await buildMatches();
+        const count = await getActiveRequestsCount();
+        res.json({
+            activeRequests: count,
+            matchCount: matches.length
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Error fetching status' });
+    }
 });
 
-app.get('/api/carpool/public-requests', apiLimiter, (req, res) => {
-    // Filter active requests
-    const now = Date.now();
-    const active = carpoolRequests.filter(r => r.time.getTime() > now - 3600000); // e.g. not older than 1 hour past
+app.get('/api/carpool/public-requests', apiLimiter, requireCarpoolSession, async (req, res) => {
+    try {
+        const requests = await fetchActiveRequests();
 
-    res.json({
-        requests: active.map(r => ({
-            id: r.id,
-            name: r.name || `Student ${r.usn.slice(-4)}`,
-            photo: r.photo,
-            direction: r.direction,
-            time: r.time,
-            flightCode: r.flightCode
-        }))
-    });
+        // Gatekeeping: Check if current user has an active request
+        const hasRequest = requests.some(r => r.usn === req.carpoolUser.usn);
+
+        if (!hasRequest) {
+            return res.json({
+                requests: [],
+                locked: true,
+                message: "Please join a journey to see other travelers."
+            });
+        }
+
+        res.json({
+            requests: requests.map(r => ({
+                id: r.id,
+                name: r.name || `Student ${r.usn.slice(-4)}`,
+                photo: r.photo,
+                direction: r.direction,
+                time: r.time,
+                flightCode: r.flightCode
+            }))
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Error fetching board' });
+    }
 });
 
-app.get('/api/carpool/matches', apiLimiter, (req, res) => {
-    const matches = buildMatches();
-    res.json({
-        matches: matches.map(match => ({
-            id: match.id,
-            direction: match.direction,
-            time: match.time,
-            wait: match.wait,
-            name: `Student ${match.users[1].usn.slice(-4)}`
-        })),
-        activeRequests: getActiveRequestsCount(),
-        matchCount: matches.length
-    });
+app.get('/api/carpool/matches', apiLimiter, async (req, res) => {
+    try {
+        const matches = await buildMatches();
+        const count = await getActiveRequestsCount();
+        res.json({
+            matches: matches.map(match => ({
+                id: match.id,
+                direction: match.direction,
+                time: match.time,
+                wait: match.wait,
+                name: match.users[1].name || `Student ${match.users[1].usn.slice(-4)}`
+            })),
+            activeRequests: count,
+            matchCount: matches.length
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Error' });
+    }
+});
+
+app.post('/api/carpool/cancel', apiLimiter, requireCarpoolSession, async (req, res) => {
+    try {
+        const { requestId } = req.body || {};
+        if (!requestId) return res.status(400).json({ error: 'Request ID required' });
+
+        if (db) {
+            await db.collection('carpool_requests').doc(requestId).delete();
+        }
+        publishMatches();
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Cancel failed' });
+    }
 });
 
 app.post('/api/carpool/accept', apiLimiter, requireCarpoolSession, async (req, res) => {
     try {
         const { matchId } = req.body || {};
         if (!matchId) return res.status(400).json({ error: 'Match required' });
-        const match = buildMatches().find(item => item.id === matchId);
+        const matches = await buildMatches();
+        const match = matches.find(item => item.id === matchId);
         if (!match) return res.status(404).json({ error: 'Match not found' });
         if (!mailer) return res.status(503).json({ error: 'Email service offline' });
         const requester = req.carpoolUser;
@@ -403,12 +583,15 @@ app.get('/api/carpool/stream', apiLimiter, (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
     sseClients.add(res);
-    res.write(`data: ${JSON.stringify({
-        matches: [],
-        activeRequests: getActiveRequestsCount(),
-        matchCount: 0
-    })}\n\n`);
-    publishMatches();
+    getActiveRequestsCount().then(count => {
+        res.write(`data: ${JSON.stringify({
+            matches: [],
+            activeRequests: count,
+            matchCount: 0
+        })}\n\n`);
+    });
+    // publishMatches(); // don't block
+
 
     const keepAlive = setInterval(() => res.write(': keep-alive\n\n'), 20000);
     req.on('close', () => {

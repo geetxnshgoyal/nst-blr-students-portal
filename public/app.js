@@ -8,8 +8,6 @@ const passwordInput = document.getElementById('password-input');
 const authError = document.getElementById('auth-error');
 const logoutBtn = document.getElementById('logout-btn');
 
-try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}
-
 authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const password = passwordInput.value;
@@ -42,10 +40,10 @@ logoutBtn.addEventListener('click', async () => {
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
         }
-    } catch (e) {}
+    } catch (e) { }
     authToken = null;
     students = [];
-    try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}
+    try { localStorage.clear(); sessionStorage.clear(); } catch (e) { }
     authScreen.classList.remove('hidden');
     mainContent.classList.add('hidden');
     document.getElementById('student-grid').innerHTML = '';
@@ -206,5 +204,5 @@ window.addEventListener('scroll', () => {
     lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
 });
 
-setInterval(() => { try { localStorage.clear(); sessionStorage.clear(); } catch(e) {} }, 1000);
-window.addEventListener('beforeunload', () => { authToken = null; students = []; try { localStorage.clear(); sessionStorage.clear(); } catch(e) {} });
+setInterval(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (e) { } }, 1000);
+window.addEventListener('beforeunload', () => { authToken = null; students = []; try { localStorage.clear(); sessionStorage.clear(); } catch (e) { } });

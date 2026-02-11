@@ -6,6 +6,8 @@ let state = {
     token: localStorage.getItem('cp_token') || null,
     usn: localStorage.getItem('cp_usn') || null,
     email: localStorage.getItem('cp_email') || null,
+    name: localStorage.getItem('cp_name') || null,
+    photo: localStorage.getItem('cp_photo') || null,
     direction: null, // 'hostel' or 'airport'
     requestId: localStorage.getItem('cp_req_id') || null,
     matches: []
@@ -69,9 +71,23 @@ function showDashboard() {
     views.auth.classList.remove('active');
     views.dashboard.classList.add('active');
 
-    document.getElementById('user-usn').textContent = state.usn || 'Student';
-    document.getElementById('user-email').textContent = state.email || '';
-    document.getElementById('user-avatar').textContent = (state.usn || 'U').slice(-2);
+    const savedName = localStorage.getItem('cp_name');
+    const savedPhoto = localStorage.getItem('cp_photo');
+    const savedEmail = localStorage.getItem('cp_email');
+
+    // Optimistic UI Update
+    document.getElementById('user-usn').textContent = state.name || savedName || state.usn || 'Student';
+    document.getElementById('user-email').textContent = state.email || savedEmail || '';
+
+    // Avatar
+    const avatarEl = document.getElementById('user-avatar');
+    const photoUrl = state.photo || savedPhoto;
+
+    if (photoUrl) {
+        avatarEl.innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+    } else {
+        avatarEl.textContent = (state.usn || 'U').slice(-2);
+    }
 
     if (state.requestId) {
         showBoard();
@@ -83,12 +99,15 @@ function showDashboard() {
 
 function showSelector() {
     document.getElementById('home-dashboard').classList.remove('hidden');
+    // Gatekeeping: Hide public board until they join
+    document.getElementById('public-board-container').classList.add('hidden');
     sections.form.classList.add('hidden');
     sections.board.classList.add('hidden');
 }
 
 function showForm() {
     document.getElementById('home-dashboard').classList.add('hidden');
+    document.getElementById('public-board-container').classList.add('hidden');
     sections.form.classList.remove('hidden');
     sections.board.classList.add('hidden');
 
@@ -101,6 +120,7 @@ function showForm() {
 
 function showBoard() {
     document.getElementById('home-dashboard').classList.add('hidden');
+    document.getElementById('public-board-container').classList.remove('hidden');
     sections.form.classList.add('hidden');
     sections.board.classList.remove('hidden');
     // startDashboardServices is called by showDashboard
@@ -112,6 +132,8 @@ forms.login.addEventListener('submit', async (e) => {
     const usn = inputs.usn.value.trim();
     if (!usn) return;
 
+    const btn = forms.login.querySelector('button');
+    btn.disabled = true;
     setStatus(status.login, 'Finding student...', 'neutral');
 
     try {
@@ -125,14 +147,16 @@ forms.login.addEventListener('submit', async (e) => {
         if (data.success) {
             state.usn = usn;
             setStatus(status.login, '', 'neutral');
-            document.getElementById('email-hint').textContent = data.message.split('ending in ')[1] || '...';
+            document.getElementById('email-hint').textContent = data.message.split('to ')[1] || '...';
             forms.login.classList.remove('active');
             forms.otp.classList.add('active');
         } else {
-            setStatus(status.login, data.error, 'error');
+            setStatus(status.login, data.error || 'Student not found', 'error');
         }
     } catch (err) {
         setStatus(status.login, 'Network Error', 'error');
+    } finally {
+        btn.disabled = false;
     }
 });
 
@@ -228,11 +252,37 @@ forms.trip.addEventListener('submit', async (e) => {
     }
 });
 
-document.getElementById('cancel-request-btn').addEventListener('click', () => {
-    // Ideally call API to cancel, for now just clear local state to reset UI
-    state.requestId = null;
-    localStorage.removeItem('cp_req_id');
-    showSelector();
+document.getElementById('cancel-request-btn').addEventListener('click', async () => {
+    if (!state.requestId) return;
+
+    const btn = document.getElementById('cancel-request-btn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Cancelling...';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_BASE}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.token}`
+            },
+            body: JSON.stringify({ requestId: state.requestId })
+        });
+
+        if (res.ok) {
+            state.requestId = null;
+            localStorage.removeItem('cp_req_id');
+            showSelector();
+        } else {
+            alert('Failed to cancel request on server');
+        }
+    } catch (e) {
+        alert('Network error during cancellation');
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 });
 
 
@@ -256,12 +306,21 @@ function startDashboardServices() {
 async function fetchPublicRequests() {
     try {
         const res = await fetch(`${API_BASE}/public-requests`, {
-            // Optional: add auth header if we want to restrict this to logged-in users
             headers: { 'Authorization': `Bearer ${state.token}` }
         });
         if (res.ok) {
             const data = await res.json();
-            renderPublicBoard(data.requests);
+
+            if (data.locked) {
+                // Stale or missing request on server
+                if (state.requestId) {
+                    state.requestId = null;
+                    localStorage.removeItem('cp_req_id');
+                    showSelector();
+                }
+            }
+
+            renderPublicBoard(data.requests || []);
         }
     } catch (e) {
         console.error('Public board error', e);
@@ -271,9 +330,24 @@ async function fetchPublicRequests() {
 function renderPublicBoard(requests) {
     const list = document.getElementById('public-board-list');
     const countEl = document.getElementById('public-count');
-    if (!list) return; // Guard if element missing
+    if (!list) return;
 
     if (countEl) countEl.textContent = requests.length;
+
+    // Gatekeeping check - double safety
+    if (!state.requestId) {
+        list.innerHTML = `
+            <div class="empty-state" style="padding:40px 20px;">
+                <div style="font-size:32px; margin-bottom:10px;">🔒</div>
+                <div style="font-weight:600; color:white;">Board Locked</div>
+                <div style="font-size:0.85rem; opacity:0.7; margin-top:5px;">
+                    Submit your journey details above to see who's traveling!
+                </div>
+            </div>
+        `;
+        return;
+    }
+
     list.innerHTML = '';
 
     if (requests.length === 0) {

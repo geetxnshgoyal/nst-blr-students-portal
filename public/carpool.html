@@ -78,9 +78,8 @@
 
             <main class="dashboard-content">
 
-                <!-- Home Dashboard (Default View) -->
+                <!-- Home Dashboard (Trip Selection) -->
                 <div id="home-dashboard">
-                    <!-- Trip Selection -->
                     <section class="trip-selector" id="trip-selector">
                         <h2>Start a Journey</h2>
                         <div class="cards-grid">
@@ -94,17 +93,6 @@
                                 <h3>To Airport</h3>
                                 <p>Departing from Campus</p>
                             </div>
-                        </div>
-                    </section>
-
-                    <!-- Public Live Board -->
-                    <section class="public-board-section">
-                        <div class="board-header">
-                            <h3>Current Active Requests</h3>
-                            <span class="live-indicator">● <span id="public-count">0</span> Live</span>
-                        </div>
-                        <div class="matches-list" id="public-board-list">
-                            <div class="empty-state">Loading live requests...</div>
                         </div>
                     </section>
                 </div>
@@ -157,6 +145,17 @@
                     </div>
 
                     <button id="cancel-request-btn" class="btn-danger">Cancel Request</button>
+                </section>
+
+                <!-- Public Live Board (Persistent) -->
+                <section class="public-board-section" id="public-board-container">
+                    <div class="board-header">
+                        <h3>Current Active Requests</h3>
+                        <span class="live-indicator">● <span id="public-count">0</span> Live</span>
+                    </div>
+                    <div class="matches-list" id="public-board-list">
+                        <div class="empty-state">Loading live requests...</div>
+                    </div>
                 </section>
             </main>
         </div>
