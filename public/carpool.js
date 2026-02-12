@@ -347,6 +347,8 @@ document.getElementById('cancel-request-btn').addEventListener('click', async ()
 
 // Matching/Board Logic
 function startDashboardServices() {
+    console.log("Auto-updates paused as requested.");
+    /* 
     // Initial loads
     fetchPublicRequests();
     if (state.requestId) fetchMatches();
@@ -359,10 +361,10 @@ function startDashboardServices() {
     window.cpEventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
         console.log("⚡ SSE Live Update:", data);
-
+        
         const countEl = document.getElementById('public-count');
         if (countEl) countEl.textContent = data.activeRequests || 0;
-
+        
         // Use live public board data
         if (data.publicRequests) {
             renderPublicBoard(data.publicRequests);
@@ -377,7 +379,7 @@ function startDashboardServices() {
         // Use live matches data
         if (data.matches && state.requestId) {
             // Filter matches for current user
-            const myMatches = data.matches.filter(m =>
+            const myMatches = data.matches.filter(m => 
                 m.id.includes(state.requestId) || (m.users && m.users.some(u => u.usn === state.usn))
             );
             renderMatches(myMatches);
@@ -391,6 +393,7 @@ function startDashboardServices() {
         window.cpEventSource.close();
         // Fallback or retry logic if needed
     };
+    */
 }
 
 async function fetchPublicRequests() {

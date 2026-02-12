@@ -194,9 +194,11 @@ async function cleanupCarpoolRequests() {
     }
 }
 
+/* 
 setInterval(cleanOldEntries, 15 * 60 * 1000); // Clean OTP store every 15 mins
 setInterval(cleanupCarpoolRequests, 30 * 60 * 1000); // Clean Firestore every 30 mins
 cleanupCarpoolRequests(); // Run once at start
+*/
 
 // Helper to fetch session
 async function getSession(token) {
