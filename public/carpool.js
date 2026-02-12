@@ -363,10 +363,8 @@ window.refreshStatus = async function () {
 }
 
 function startDashboardServices() {
-    console.log("Auto-updates paused. Performing one-time initial load.");
-    // One-time initial load to show current status
-    fetchPublicRequests();
-    if (state.requestId) fetchMatches();
+    console.log("Auto-updates disabled. Data load is manual only.");
+    // Removed automatic initial load to minimize API calls as requested.
 }
 
 async function fetchPublicRequests() {
