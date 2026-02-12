@@ -297,8 +297,9 @@ forms.trip.addEventListener('submit', async (e) => {
 
         if (data.success) {
             state.requestId = data.requestId;
-            state.requestTime = payload.time; // Set immediately for wait logic
+            state.requestTime = payload.time;
             localStorage.setItem('cp_req_id', state.requestId);
+            localStorage.setItem('cp_req_time', state.requestTime);
             showBoard();
         } else {
             alert(data.error);
@@ -331,7 +332,9 @@ document.getElementById('cancel-request-btn').addEventListener('click', async ()
 
         if (res.ok) {
             state.requestId = null;
+            state.requestTime = null;
             localStorage.removeItem('cp_req_id');
+            localStorage.removeItem('cp_req_time');
             showSelector();
         } else {
             alert('Failed to cancel request on server');
