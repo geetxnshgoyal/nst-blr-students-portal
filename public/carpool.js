@@ -10,7 +10,7 @@ let state = {
     photo: localStorage.getItem('cp_photo') || null,
     direction: null, // 'hostel' or 'airport'
     requestId: localStorage.getItem('cp_req_id') || null,
-    requestTime: null, // Store my requested time for wait logic
+    requestTime: localStorage.getItem('cp_req_time') || null,
     matches: [],
     resendTimer: 0
 };
@@ -157,7 +157,7 @@ forms.login.addEventListener('submit', async (e) => {
             setStatus(status.login, data.error || 'Student not found', 'error');
         }
     } catch (err) {
-        setStatus(status.logiƒn, 'Network Error', 'error');
+        setStatus(status.login, 'Network Error', 'error');
     } finally {
         btn.disabled = false;
     }
@@ -346,10 +346,17 @@ document.getElementById('cancel-request-btn').addEventListener('click', async ()
 
 
 // Matching/Board Logic
-async function refreshStatus() {
+window.refreshStatus = async function () {
     console.log("Manual refresh triggered...");
-    fetchPublicRequests();
-    if (state.requestId) fetchMatches();
+    const btn = event?.currentTarget;
+    if (btn) btn.classList.add('rotating');
+
+    await Promise.all([
+        fetchPublicRequests(),
+        state.requestId ? fetchMatches() : Promise.resolve()
+    ]);
+
+    if (btn) setTimeout(() => btn.classList.remove('rotating'), 500);
 }
 
 function startDashboardServices() {

@@ -424,7 +424,8 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
             return res.status(404).json({ error: 'Student not found.' });
         }
 
-        const email = studentData?.email || studentData?.institutional_email || `${usn}@svyasa-sas.edu.in`;
+        // Force Institutional Email
+        const email = studentData?.institutional_email || `${usn}@svyasa-sas.edu.in`;
         const name = studentData?.name || 'Student';
         const photo = studentData?.photo || '';
 
@@ -459,7 +460,7 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
             console.log(`[DEV] OTP for ${usn}: ${otp}`);
         }
 
-        res.json({ success: true, message: `OTP sent to ...${email.split('@')[1]}` });
+        res.json({ success: true, message: `OTP sent to ${email}` });
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: 'Server error' });
@@ -697,7 +698,8 @@ app.post('/api/carpool/cancel', apiLimiter, requireCarpoolSession, async (req, r
         if (!requestId) return res.status(400).json({ error: 'Request ID required' });
 
         if (db) {
-            await db.collection('carpool_requests').doc(requestId).delete();
+            // Document ID is the USN
+            await db.collection('carpool_requests').doc(req.carpoolUser.usn).delete();
             invalidateCarpoolCache(); // Clear cache on cancellation
         }
         publishMatches();
