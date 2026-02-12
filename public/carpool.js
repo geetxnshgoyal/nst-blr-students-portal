@@ -346,54 +346,17 @@ document.getElementById('cancel-request-btn').addEventListener('click', async ()
 
 
 // Matching/Board Logic
-function startDashboardServices() {
-    console.log("Auto-updates paused as requested.");
-    /* 
-    // Initial loads
+async function refreshStatus() {
+    console.log("Manual refresh triggered...");
     fetchPublicRequests();
     if (state.requestId) fetchMatches();
+}
 
-    // Use SSE for real-time updates instead of polling
-    if (window.cpEventSource) window.cpEventSource.close();
-
-    window.cpEventSource = new EventSource(`${API_BASE}/stream`);
-
-    window.cpEventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log("⚡ SSE Live Update:", data);
-        
-        const countEl = document.getElementById('public-count');
-        if (countEl) countEl.textContent = data.activeRequests || 0;
-        
-        // Use live public board data
-        if (data.publicRequests) {
-            renderPublicBoard(data.publicRequests);
-            if (state.requestId) {
-                const myReq = data.publicRequests.find(r => r.id === state.requestId);
-                if (myReq) renderMyRequest(myReq);
-            }
-        } else {
-            fetchPublicRequests();
-        }
-
-        // Use live matches data
-        if (data.matches && state.requestId) {
-            // Filter matches for current user
-            const myMatches = data.matches.filter(m => 
-                m.id.includes(state.requestId) || (m.users && m.users.some(u => u.usn === state.usn))
-            );
-            renderMatches(myMatches);
-        } else if (state.requestId) {
-            fetchMatches();
-        }
-    };
-
-    window.cpEventSource.onerror = (err) => {
-        console.warn("SSE Error, retrying...", err);
-        window.cpEventSource.close();
-        // Fallback or retry logic if needed
-    };
-    */
+function startDashboardServices() {
+    console.log("Auto-updates paused. Performing one-time initial load.");
+    // One-time initial load to show current status
+    fetchPublicRequests();
+    if (state.requestId) fetchMatches();
 }
 
 async function fetchPublicRequests() {

@@ -136,7 +136,16 @@
                 <section class="status-board hidden" id="status-board">
                     <div class="board-header">
                         <h3>Your Status</h3>
-                        <span class="live-indicator">● Tracking</span>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button class="btn-icon" onclick="refreshStatus()" title="Refresh"
+                                style="padding: 5px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white"
+                                    stroke-width="2">
+                                    <path d="M21 2v6h-6M3 22v-6h6M21 13A9 9 0 1 1 3 13" />
+                                </svg>
+                            </button>
+                            <span class="live-indicator">● Manual Update</span>
+                        </div>
                     </div>
 
                     <div class="my-request-card" id="my-request-card">
@@ -156,7 +165,16 @@
                 <section class="public-board-section" id="public-board-container">
                     <div class="board-header">
                         <h3>Current Active Requests</h3>
-                        <span class="live-indicator">● <span id="public-count">0</span> Live</span>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button class="btn-icon" onclick="refreshStatus()" title="Refresh"
+                                style="padding: 5px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white"
+                                    stroke-width="2">
+                                    <path d="M21 2v6h-6M3 22v-6h6M21 13A9 9 0 1 1 3 13" />
+                                </svg>
+                            </button>
+                            <span class="live-indicator">● <span id="public-count">0</span> Listed</span>
+                        </div>
                     </div>
                     <div class="matches-list" id="public-board-list">
                         <div class="empty-state">Loading live requests...</div>
