@@ -354,17 +354,63 @@ window.refreshStatus = async function () {
     const btn = event?.currentTarget;
     if (btn) btn.classList.add('rotating');
 
-    await Promise.all([
-        fetchPublicRequests(),
-        state.requestId ? fetchMatches() : Promise.resolve()
-    ]);
+    await fetchInitialData();
 
     if (btn) setTimeout(() => btn.classList.remove('rotating'), 500);
 }
 
 function startDashboardServices() {
-    console.log("Auto-updates disabled. Data load is manual only.");
-    // Removed automatic initial load to minimize API calls as requested.
+    console.log("Services starting...");
+
+    // Initial Load
+    fetchInitialData();
+
+    // SSE for Real-time
+    if (window.cpEventSource) window.cpEventSource.close();
+
+    // EventSource doesn't support headers, but we can use a query param or just rely on the fact 
+    // that public requests are mostly public anyway if you have a token.
+    // However, the backend doesn't check token for stream.
+    window.cpEventSource = new EventSource(`${API_BASE}/stream`);
+
+    window.cpEventSource.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.log("Live update received");
+
+            if (data.publicRequests) {
+                renderPublicBoard(data.publicRequests);
+                if (state.requestId) {
+                    const myReq = data.publicRequests.find(r => r.id === state.requestId);
+                    if (myReq) renderMyRequest(myReq);
+                }
+            }
+
+            // If match count changed or matches provided, refresh our specific matches
+            if (state.requestId) {
+                fetchMatches();
+            }
+        } catch (e) {
+            console.error("Stream parse error", e);
+        }
+    };
+
+    window.cpEventSource.onerror = () => {
+        console.warn("Stream connection lost. Retrying...");
+        window.cpEventSource.close();
+        setTimeout(startDashboardServices, 5000);
+    };
+}
+
+async function fetchInitialData() {
+    try {
+        await Promise.all([
+            fetchPublicRequests(),
+            state.requestId ? fetchMatches() : Promise.resolve()
+        ]);
+    } catch (e) {
+        console.error("Initial load failed", e);
+    }
 }
 
 async function fetchPublicRequests() {

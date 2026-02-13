@@ -121,26 +121,33 @@ async function fetchActiveRequests() {
     }
 
     try {
-        const cutoff = new Date(Date.now() - (2 * 60 * 60 * 1000)).toISOString();
-        const snapshot = await db.collection('carpool_requests')
-            .where('time', '>', cutoff)
-            .orderBy('time', 'asc')
-            .get();
+        // Fetch more generously and filter in JS to avoid index issues
+        const cutoff = new Date(Date.now() - (24 * 60 * 60 * 1000)).toISOString(); // 24 hours
+        const snapshot = await db.collection('carpool_requests').get();
 
-        const allDocs = snapshot.docs;
+        const allDocs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+
+        // Filter and Sort in JS
+        const filtered = allDocs.filter(item => {
+            const t = item.data.time;
+            return t && t > cutoff;
+        });
+
+        filtered.sort((a, b) => (a.data.time || "").localeCompare(b.data.time || ""));
+
         const unique = new Map();
         const toDelete = [];
 
-        allDocs.forEach(doc => {
-            const data = doc.data();
-            const usn = data.usn;
+        filtered.forEach(item => {
+            const data = item.data;
+            const usn = data.usn || item.id;
             const existing = unique.get(usn);
 
-            if (!existing || data.createdAt > existing.data.createdAt) {
-                if (existing) toDelete.push(existing.id); // Old one we don't want
-                unique.set(usn, { id: doc.id, data: data });
+            if (!existing || (data.createdAt || 0) > (existing.data.createdAt || 0)) {
+                if (existing) toDelete.push(existing.id);
+                unique.set(usn, { id: item.id, data: data });
             } else {
-                toDelete.push(doc.id); // This one is older or redundant
+                toDelete.push(item.id);
             }
         });
 
@@ -250,17 +257,14 @@ async function publishMatches() {
 
     const payload = JSON.stringify({
         matches: matches.map(match => ({
-            id: match.id,
-            direction: match.direction,
-            time: match.time,
             wait: match.wait,
-            name: `Student ${match.users[1].usn.slice(-4)}`
+            name: `Student ${String(match.users[1].usn || '0000').slice(-4)}`
         })),
         activeRequests: count,
         // Include public requests in SSE to save extra GET calls
         publicRequests: requests.map(r => ({
             id: r.id,
-            name: r.name || `Student ${r.usn.slice(-4)}`,
+            name: r.name || `Student ${String(r.usn || '0000').slice(-4)}`,
             photo: r.photo,
             direction: r.direction,
             time: r.time,
@@ -650,7 +654,7 @@ app.get('/api/carpool/public-requests', apiLimiter, requireCarpoolSession, async
         res.json({
             requests: requests.map(r => ({
                 id: r.id,
-                name: r.name || `Student ${r.usn.slice(-4)}`,
+                name: r.name || `Student ${String(r.usn || '0000').slice(-4)}`,
                 photo: r.photo,
                 direction: r.direction,
                 time: r.time,
@@ -681,7 +685,7 @@ app.get('/api/carpool/matches', apiLimiter, requireCarpoolSession, async (req, r
                     time: other.time,
                     window: match.time,
                     wait: match.wait,
-                    name: other.name || `Student ${other.usn.slice(-4)}`
+                    name: other.name || `Student ${String(other.usn || '0000').slice(-4)}`
                 };
             }),
             activeRequests: await getActiveRequestsCount(),
@@ -752,12 +756,12 @@ app.get('/api/carpool/stream', apiLimiter, (req, res) => {
                 direction: m.direction,
                 time: m.time,
                 wait: m.wait,
-                name: `Student ${m.users[1].usn.slice(-4)}`
+                name: `Student ${String(m.users[1].usn || '0000').slice(-4)}`
             })),
             activeRequests: requests.length,
             publicRequests: requests.map(r => ({
                 id: r.id,
-                name: r.name || `Student ${r.usn.slice(-4)}`,
+                name: r.name || `Student ${String(r.usn || '0000').slice(-4)}`,
                 photo: r.photo,
                 direction: r.direction,
                 time: r.time,
