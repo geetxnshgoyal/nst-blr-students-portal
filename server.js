@@ -24,6 +24,7 @@ const otpStore = new Map();
 const carpoolSessions = new Map();
 const carpoolRequests = [];
 const sseClients = new Set();
+let adminOtpEntry = null;
 
 const smtpConfig = {
     host: process.env.SMTP_HOST,
@@ -256,6 +257,62 @@ app.post('/api/login', authLimiter, async (req, res) => {
         res.json({ success: true, token });
     } catch (e) {
         res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.post('/api/admin/login', authLimiter, async (req, res) => {
+    try {
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        adminOtpEntry = {
+            otp,
+            expiresAt: Date.now() + 10 * 60 * 1000
+        };
+
+        if (mailer && process.env.SMTP_FROM) {
+            await mailer.sendMail({
+                from: process.env.SMTP_FROM || process.env.SMTP_USER,
+                to: process.env.SMTP_USER,
+                subject: 'NST Admin OTP',
+                text: `Your admin OTP is ${otp}. It expires in 10 minutes.`
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Verification code sent. Please enter OTP to continue.'
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to send verification code' });
+    }
+});
+
+app.post('/api/admin/verify', authLimiter, (req, res) => {
+    const { otp } = req.body || {};
+    if (!otp) return res.status(400).json({ error: 'OTP required' });
+    if (!adminOtpEntry || adminOtpEntry.expiresAt <= Date.now()) {
+        return res.status(400).json({ error: 'OTP expired. Request a new code.' });
+    }
+    if (String(otp).trim() !== adminOtpEntry.otp) {
+        return res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+    adminOtpEntry = null;
+    const token = jwt.sign({ admin: true, t: Date.now() }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ success: true, token });
+});
+
+app.get('/api/admin/students', apiLimiter, authenticateToken, async (req, res) => {
+    try {
+        const firebaseStudents = await loadStudentsFromFirestore();
+        const students = firebaseStudents || loadStudentsFromFile();
+        res.json({ success: true, students });
+    } catch (e) {
+        try {
+            const fallbackStudents = loadStudentsFromFile();
+            res.json({ success: true, students: fallbackStudents });
+        } catch (fallbackError) {
+            res.status(500).json({ error: 'Error loading data' });
+        }
     }
 });
 
