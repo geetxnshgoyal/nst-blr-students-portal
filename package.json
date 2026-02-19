@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "npx nodemon server.js"
+    "dev": "npx nodemon server.js",
+    "import:students": "node scripts/import-students-to-firebase.js"
   },
   "dependencies": {
     "axios": "^1.13.5",

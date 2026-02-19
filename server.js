@@ -10,72 +10,19 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin
-try {
-    if (!admin.apps.length) {
-        const projectId = process.env.FIREBASE_PROJECT_ID;
-        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-        const privateKey = process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined;
-
-        if (projectId && clientEmail && privateKey) {
-            admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId,
-                    clientEmail,
-                    privateKey,
-                }),
-            });
-            console.log("Firebase Admin initialized with service account.");
-        } else {
-            console.warn("Firebase credentials missing in .env. Using applicationDefault().");
-            admin.initializeApp({
-                credential: admin.credential.applicationDefault()
-            });
-        }
-    }
-} catch (e) {
-    console.error("Firebase Admin Init Error:", e.message);
-}
-const db = admin.apps.length ? admin.firestore() : null;
-
 const app = express();
-app.set('trust proxy', 1); // Trust first proxy (Vercel)
 const PORT = process.env.PORT || 3000;
-
-// Internal Cache for speed
-let studentCache = new Map();
-
-async function seedStudentCache() {
-    if (!db) {
-        console.warn("DB not ready, skipping student cache seed.");
-        return;
-    }
-    try {
-        console.log("Seeding student cache from Firestore...");
-        const snapshot = await db.collection('students').get();
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const usn = String(data.usn || doc.id).toUpperCase();
-            studentCache.set(usn, data);
-        });
-        console.log(`Successfully cached ${studentCache.size} students from Firestore.`);
-    } catch (e) {
-        console.error("Error seeding student cache:", e.message);
-    }
-}
-
 const JWT_SECRET = process.env.JWT_SECRET || require('crypto').randomBytes(64).toString('hex');
 
 let storedPasswordHash = null;
 
 (async () => {
     storedPasswordHash = await bcrypt.hash('123456778', 12);
-    await seedStudentCache();
 })();
 
 const otpStore = new Map();
-const otpRateLimit = new Map(); // Simple per-USN rate limit map
-// Removed in-memory carpoolSessions and carpoolRequests in favor of Firestore
+const carpoolSessions = new Map();
+const carpoolRequests = [];
 const sseClients = new Set();
 
 const smtpConfig = {
@@ -90,6 +37,53 @@ const smtpConfig = {
 
 const mailer = smtpConfig.host && smtpConfig.auth ? nodemailer.createTransport(smtpConfig) : null;
 
+let firestore = null;
+try {
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    if (projectId && clientEmail && privateKey) {
+        if (!admin.apps.length) {
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId,
+                    clientEmail,
+                    privateKey: privateKey.replace(/\\n/g, '\n')
+                })
+            });
+        }
+        firestore = admin.firestore();
+    }
+} catch (e) {
+    firestore = null;
+}
+
+function sanitizeStudents(students) {
+    return students.map(student => {
+        const { abc_id, ...rest } = student;
+        return rest;
+    });
+}
+
+function loadStudentsFromFile() {
+    const data = fs.readFileSync(path.join(__dirname, 'students.json'), 'utf8');
+    const students = JSON.parse(data);
+    return sanitizeStudents(students);
+}
+
+async function loadStudentsFromFirestore() {
+    if (!firestore) return null;
+    const snapshot = await firestore.collection('students').get();
+    const students = [];
+    snapshot.forEach(doc => {
+        const record = doc.data() || {};
+        if (!record.usn) record.usn = doc.id;
+        students.push(record);
+    });
+    students.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    return sanitizeStudents(students);
+}
+
 function makeToken() {
     return crypto.randomBytes(24).toString('hex');
 }
@@ -98,141 +92,30 @@ function minutesDiff(a, b) {
     return Math.abs(a.getTime() - b.getTime()) / 60000;
 }
 
-// Helper to fetch active requests from Firestore
-// In-memory cache to stay within Firebase free tier limits
-let carpoolCache = {
-    requests: null,
-    lastUpdate: 0,
-    TTL: 120 * 1000 // 2 minutes
-};
-
-function invalidateCarpoolCache() {
-    carpoolCache.requests = null;
-    carpoolCache.lastUpdate = 0;
-}
-
-async function fetchActiveRequests() {
-    if (!db) return [];
-
-    // Return cached data if still valid
-    const now = Date.now();
-    if (carpoolCache.requests && (now - carpoolCache.lastUpdate < carpoolCache.TTL)) {
-        return carpoolCache.requests;
-    }
-
-    try {
-        // Fetch more generously and filter in JS to avoid index issues
-        const cutoff = new Date(Date.now() - (24 * 60 * 60 * 1000)).toISOString(); // 24 hours
-        const snapshot = await db.collection('carpool_requests').get();
-
-        const allDocs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-
-        // Filter and Sort in JS
-        const filtered = allDocs.filter(item => {
-            const t = item.data.time;
-            return t && t > cutoff;
-        });
-
-        filtered.sort((a, b) => (a.data.time || "").localeCompare(b.data.time || ""));
-
-        const unique = new Map();
-        const toDelete = [];
-
-        filtered.forEach(item => {
-            const data = item.data;
-            const usn = data.usn || item.id;
-            const existing = unique.get(usn);
-
-            if (!existing || (data.createdAt || 0) > (existing.data.createdAt || 0)) {
-                if (existing) toDelete.push(existing.id);
-                unique.set(usn, { id: item.id, data: data });
-            } else {
-                toDelete.push(item.id);
-            }
-        });
-
-        // Auto-delete duplicates from Firebase if caught
-        if (toDelete.length > 0) {
-            console.log(`[CLEANUP] Found ${toDelete.length} duplicates. Deleting...`);
-            const batch = db.batch();
-            toDelete.forEach(id => {
-                batch.delete(db.collection('carpool_requests').doc(id));
-            });
-            await batch.commit();
-        }
-
-        const result = Array.from(unique.values()).map(item => item.data);
-
-        // Update cache
-        carpoolCache.requests = result;
-        carpoolCache.lastUpdate = now;
-
-        return result;
-    } catch (e) {
-        console.error("Error fetching requests:", e);
-        return carpoolCache.requests || []; // Fallback to stale cache if error
-    }
-}
-
 function cleanOldEntries() {
     const now = Date.now();
     for (const [usn, entry] of otpStore.entries()) {
         if (entry.expiresAt <= now) otpStore.delete(usn);
     }
-}
-
-async function cleanupCarpoolRequests() {
-    if (!db) return;
-    try {
-        // Delete requests that are more than 1 hour past their scheduled time
-        const cutoff = new Date(Date.now() - (1 * 60 * 60 * 1000)).toISOString();
-        const expired = await db.collection('carpool_requests')
-            .where('time', '<=', cutoff)
-            .get();
-
-        if (expired.empty) return;
-
-        const batch = db.batch();
-        expired.docs.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-        console.log(`[CLEANUP] Removed ${expired.size} expired carpool requests.`);
-    } catch (e) {
-        console.error("Cleanup error:", e);
+    for (const [token, entry] of carpoolSessions.entries()) {
+        if (entry.expiresAt <= now) carpoolSessions.delete(token);
+    }
+    const cutoff = now - (6 * 60 * 60 * 1000);
+    while (carpoolRequests.length && carpoolRequests[0].createdAt < cutoff) {
+        carpoolRequests.shift();
     }
 }
 
-/* 
-setInterval(cleanOldEntries, 15 * 60 * 1000); // Clean OTP store every 15 mins
-setInterval(cleanupCarpoolRequests, 30 * 60 * 1000); // Clean Firestore every 30 mins
-cleanupCarpoolRequests(); // Run once at start
-*/
-
-// Helper to fetch session
-async function getSession(token) {
-    if (!db) return null;
-    try {
-        const doc = await db.collection('carpool_sessions').doc(token).get();
-        return doc.exists ? doc.data() : null;
-    } catch (e) {
-        return null;
-    }
-}
-
-async function buildMatches() {
-    const requests = await fetchActiveRequests();
+function buildMatches() {
+    cleanOldEntries();
     const matches = [];
-    for (let i = 0; i < requests.length; i += 1) {
-        for (let j = i + 1; j < requests.length; j += 1) {
-            const a = requests[i];
-            const b = requests[j];
-
-            // Basic matching logic
+    for (let i = 0; i < carpoolRequests.length; i += 1) {
+        for (let j = i + 1; j < carpoolRequests.length; j += 1) {
+            const a = carpoolRequests[i];
+            const b = carpoolRequests[j];
             if (a.direction !== b.direction) continue;
-            if (a.usn === b.usn) continue; // No self-matching
-
             const maxWindow = 20 + Math.min(a.waitMinutes, b.waitMinutes);
-            if (minutesDiff(new Date(a.time), new Date(b.time)) > maxWindow) continue;
-
+            if (minutesDiff(a.time, b.time) > maxWindow) continue;
             matches.push({
                 id: `${a.id}-${b.id}`,
                 direction: a.direction,
@@ -245,50 +128,38 @@ async function buildMatches() {
     return matches;
 }
 
-async function getActiveRequestsCount() {
-    const requests = await fetchActiveRequests();
-    return requests.length;
+function getActiveRequestsCount() {
+    cleanOldEntries();
+    return carpoolRequests.length;
 }
 
-async function publishMatches() {
-    const matches = await buildMatches();
-    const requests = await fetchActiveRequests();
-    const count = requests.length;
-
+function publishMatches() {
+    const matches = buildMatches();
     const payload = JSON.stringify({
         matches: matches.map(match => ({
+            id: match.id,
+            direction: match.direction,
+            time: match.time,
             wait: match.wait,
-            name: `Student ${String(match.users[1].usn || '0000').slice(-4)}`
+            name: `Student ${match.users[1].usn.slice(-4)}`
         })),
-        activeRequests: count,
-        // Include public requests in SSE to save extra GET calls
-        publicRequests: requests.map(r => ({
-            id: r.id,
-            name: r.name || `Student ${String(r.usn || '0000').slice(-4)}`,
-            photo: r.photo,
-            direction: r.direction,
-            time: r.time,
-            flightCode: r.flightCode
-        }))
+        activeRequests: getActiveRequestsCount(),
+        matchCount: matches.length
     });
     for (const res of sseClients) {
         res.write(`data: ${payload}\n\n`);
     }
 }
 
-async function requireCarpoolSession(req, res, next) {
+function requireCarpoolSession(req, res, next) {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
-    if (!token) return res.status(401).json({ error: 'Verification required' });
-
-    const session = await getSession(token);
-
-    if (!session) {
-        return res.status(401).json({ error: 'Session not found' });
+    if (!token || !carpoolSessions.has(token)) {
+        return res.status(401).json({ error: 'Verification required' });
     }
+    const session = carpoolSessions.get(token);
     if (session.expiresAt <= Date.now()) {
-        // Optional: delete from DB
+        carpoolSessions.delete(token);
         return res.status(401).json({ error: 'Verification expired' });
     }
     req.carpoolUser = session;
@@ -390,335 +261,88 @@ app.post('/api/login', authLimiter, async (req, res) => {
 
 app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
     try {
-        let { usn } = req.body || {};
-        if (!usn) return res.status(400).json({ error: 'USN required' });
-        usn = usn.trim().toUpperCase();
-        console.log(`[OTP Request] USN: ${usn}, IP: ${req.ip}, Time: ${new Date().toISOString()}`);
-
-        // Shared Rate Limit check via Firestore (Vercel friendly)
-        if (db) {
-            try {
-                const lastOtpDoc = await db.collection('otps').doc(usn).get();
-                if (lastOtpDoc.exists) {
-                    const lastData = lastOtpDoc.data();
-                    const lastTime = lastData.createdAt?.toMillis() || 0;
-                    if (Date.now() - lastTime < 60000) {
-                        const wait = Math.ceil((60000 - (Date.now() - lastTime)) / 1000);
-                        return res.status(429).json({ error: `Please wait ${wait}s before requesting again.` });
-                    }
-                }
-            } catch (err) { console.error("Rate limit check fail:", err); }
-        }
-
-        // 1. Check Cache (Instant)
-        let studentData = studentCache.get(usn);
-
-        // 2. Try Firestore if not in cache or to refresh data
-        if (db) {
-            try {
-                const doc = await db.collection('students').doc(usn).get();
-                if (doc.exists) {
-                    studentData = { ...(studentData || {}), ...doc.data() };
-                    studentCache.set(usn, studentData); // Refresh cache
-                }
-            } catch (e) { console.warn("Firestore student lookup failed"); }
-        }
-
-        if (!studentData && !usn.startsWith('21')) {
-            return res.status(404).json({ error: 'Student not found.' });
-        }
-
-        // Force Institutional Email
-        const email = studentData?.institutional_email || `${usn}@svyasa-sas.edu.in`;
-        const name = studentData?.name || 'Student';
-        const photo = studentData?.photo || '';
-
+        const { usn, email } = req.body || {};
+        if (!usn || !email) return res.status(400).json({ error: 'USN and email required' });
+        if (!/^[0-9]{10}$/.test(usn)) return res.status(400).json({ error: 'Invalid USN' });
+        if (!mailer) return res.status(503).json({ error: 'Email service offline' });
         const otp = String(Math.floor(100000 + Math.random() * 900000));
-
-        // Save to Firestore so all Vercel instances see it
-        if (db) {
-            try {
-                await db.collection('otps').doc(usn).set({
-                    otp, email, name, photo,
-                    expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 20 * 60 * 1000),
-                    createdAt: admin.firestore.FieldValue.serverTimestamp()
-                });
-            } catch (err) { console.error("Firestore OTP save fail:", err); }
-        }
-
-        otpStore.set(usn, { otp, email, name, photo, expiresAt: Date.now() + 20 * 60 * 1000 });
-
-        if (mailer) {
-            try {
-                await mailer.sendMail({
-                    from: process.env.SMTP_FROM || process.env.SMTP_USER,
-                    to: email,
-                    subject: 'NST Carpool OTP',
-                    text: `Your NST carpool OTP is ${otp}. It expires in 20 minutes.`
-                });
-                console.log(`[Email Sent] OTP for USN: ${usn} sent to: ${email}`);
-            } catch (err) {
-                console.error("Mail send fail:", err);
-            }
-        } else {
-            console.log(`[DEV] OTP for ${usn}: ${otp}`);
-        }
-
-        res.json({ success: true, message: `OTP sent to ${email}` });
+        otpStore.set(usn, { otp, email, expiresAt: Date.now() + 10 * 60 * 1000 });
+        await mailer.sendMail({
+            from: process.env.SMTP_FROM || process.env.SMTP_USER,
+            to: email,
+            subject: 'NST Carpool OTP',
+            text: `Your NST carpool OTP is ${otp}. It expires in 10 minutes.`
+        });
+        res.json({ success: true });
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ error: 'OTP send failed' });
     }
 });
 
-app.post('/api/carpool/verify-otp', apiLimiter, async (req, res) => {
-    let { usn, otp } = req.body || {};
+app.post('/api/carpool/verify-otp', apiLimiter, (req, res) => {
+    const { usn, otp } = req.body || {};
     if (!usn || !otp) return res.status(400).json({ error: 'USN and OTP required' });
-    usn = usn.trim().toUpperCase();
-    let entry = otpStore.get(usn);
-
-    // Check Firestore if not in memory (Vercel support)
-    if (!entry && db) {
-        try {
-            const doc = await db.collection('otps').doc(usn).get();
-            if (doc.exists) {
-                const data = doc.data();
-                entry = { ...data, expiresAt: data.expiresAt?.toMillis() || 0 };
-            }
-        } catch (err) { console.error("Firestore OTP verify lookup fail:", err); }
-    }
-
-    if (!entry) {
-        return res.status(400).json({ error: 'OTP not found. Please request a new one.' });
-    }
-    if (entry.expiresAt <= Date.now()) {
-        otpStore.delete(usn);
-        return res.status(400).json({ error: 'OTP expired. Please request a new one.' });
-    }
+    const entry = otpStore.get(usn);
+    if (!entry || entry.expiresAt <= Date.now()) return res.status(400).json({ error: 'OTP expired' });
     if (entry.otp !== otp) return res.status(400).json({ error: 'OTP invalid' });
     const token = makeToken();
-    const sessionData = {
+    carpoolSessions.set(token, {
         usn,
         email: entry.email,
-        name: entry.name,
-        photo: entry.photo,
-        expiresAt: Date.now() + 24 * 60 * 60 * 1000 // Extended session for persistence
-    };
-
-    // Save session to Firestore
-    if (db) {
-        try {
-            await db.collection('carpool_sessions').doc(token).set(sessionData);
-        } catch (e) {
-            console.error("Session save error", e);
-        }
-    }
-
+        expiresAt: Date.now() + 60 * 60 * 1000
+    });
     otpStore.delete(usn);
-    res.json({
-        success: true,
-        token,
-        email: entry.email,
-        name: entry.name,
-        photo: entry.photo
-    });
+    res.json({ success: true, token, email: entry.email });
 });
 
-// Admin Portal Endpoints
-app.post('/api/admin/login', authLimiter, async (req, res) => {
-    try {
-        const adminEmail = process.env.SMTP_USER;
-        if (!adminEmail) return res.status(500).json({ error: 'Admin email not configured' });
-
-        const otp = String(Math.floor(100000 + Math.random() * 900000));
-        otpStore.set('admin_portal', { otp, email: adminEmail, expiresAt: Date.now() + 10 * 60 * 1000 });
-
-        if (mailer) {
-            await mailer.sendMail({
-                from: process.env.SMTP_FROM || process.env.SMTP_USER,
-                to: adminEmail,
-                subject: 'Admin Portal Access Code',
-                text: `Your Admin Portal verification code is ${otp}.`
-            });
-            res.json({ success: true, message: `Code sent to ${adminEmail}` });
-        } else {
-            console.log(`Admin OTP: ${otp}`);
-            res.json({ success: true, message: 'OTP logged to server console (Dev Mode)' });
-        }
-    } catch (e) {
-        res.status(500).json({ error: 'Failed to send admin OTP' });
-    }
-});
-
-app.post('/api/admin/verify', authLimiter, (req, res) => {
-    const { otp } = req.body || {};
-    const entry = otpStore.get('admin_portal');
-
-    if (!entry || entry.expiresAt <= Date.now()) return res.status(400).json({ error: 'OTP expired' });
-    if (entry.otp !== otp) return res.status(400).json({ error: 'Invalid OTP' });
-
-    const token = jwt.sign({ admin: true, t: Date.now() }, JWT_SECRET, { expiresIn: '8h' });
-    otpStore.delete('admin_portal');
-    res.json({ success: true, token });
-});
-
-function authenticateAdmin(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
-
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err || !decoded.admin) return res.status(403).json({ error: 'Forbidden' });
-        req.admin = decoded;
-        next();
-    });
-}
-
-app.get('/api/admin/students', apiLimiter, authenticateAdmin, async (req, res) => {
-    try {
-        if (!db) return res.status(503).json({ error: 'Database offline' });
-        const snapshot = await db.collection('students').get();
-        const students = snapshot.docs.map(doc => doc.data());
-        res.json({ success: true, students });
-    } catch (e) {
-        res.status(500).json({ error: 'Failed to fetch students' });
-    }
-});
-
-app.post('/api/carpool/requests', apiLimiter, requireCarpoolSession, async (req, res) => {
+app.post('/api/carpool/requests', apiLimiter, requireCarpoolSession, (req, res) => {
     const { direction, flightCode, time, waitMinutes } = req.body || {};
     if (!direction || !time) return res.status(400).json({ error: 'Direction and time required' });
-    // Force IST if no offset provided (datetime-local usually sends YYYY-MM-DDTHH:MM)
-    const istTime = time.includes('+') || time.endsWith('Z') ? time : `${time}:00+05:30`;
-    const parsedTime = new Date(istTime);
+    const parsedTime = new Date(time);
     if (Number.isNaN(parsedTime.getTime())) return res.status(400).json({ error: 'Invalid time' });
     const request = {
-        id: makeToken(), // Random ID for the request entry
+        id: makeToken(),
         usn: req.carpoolUser.usn,
         email: req.carpoolUser.email,
-        name: req.carpoolUser.name,
-        photo: req.carpoolUser.photo,
         direction,
         flightCode: (flightCode || '').trim(),
-        time: parsedTime.toISOString(),
+        time: parsedTime,
         waitMinutes: Math.max(0, Number(waitMinutes || 0)),
         createdAt: Date.now()
     };
-
-    // Save to Firestore - USE USN AS ID TO PREVENT DUPLICATES
-    if (db) {
-        try {
-            // We use USN as the document ID so one student = one active request.
-            // If they submit again, it just updates their existing request.
-            await db.collection('carpool_requests').doc(req.carpoolUser.usn).set(request);
-            invalidateCarpoolCache();
-        } catch (e) {
-            console.error("Request save error", e);
-            return res.status(500).json({ error: 'Database error' });
-        }
-    }
-
-    // Publish update
-    publishMatches(); // This is async now but we don't await it to return fast
+    carpoolRequests.push(request);
+    publishMatches();
     res.json({ success: true, requestId: request.id });
 });
 
-app.get('/api/carpool/status', apiLimiter, async (req, res) => {
-    try {
-        const matches = await buildMatches();
-        const count = await getActiveRequestsCount();
-        res.json({
-            activeRequests: count,
-            matchCount: matches.length
-        });
-    } catch (e) {
-        res.status(500).json({ error: 'Error fetching status' });
-    }
+app.get('/api/carpool/status', apiLimiter, (req, res) => {
+    const matches = buildMatches();
+    res.json({
+        activeRequests: getActiveRequestsCount(),
+        matchCount: matches.length
+    });
 });
 
-app.get('/api/carpool/public-requests', apiLimiter, requireCarpoolSession, async (req, res) => {
-    try {
-        const requests = await fetchActiveRequests();
-
-        // Gatekeeping: Check if current user has an active request
-        const hasRequest = requests.some(r => r.usn === req.carpoolUser.usn);
-
-        if (!hasRequest) {
-            return res.json({
-                requests: [],
-                locked: true,
-                message: "Please join a journey to see other travelers."
-            });
-        }
-
-        res.json({
-            requests: requests.map(r => ({
-                id: r.id,
-                name: r.name || `Student ${String(r.usn || '0000').slice(-4)}`,
-                photo: r.photo,
-                direction: r.direction,
-                time: r.time,
-                flightCode: r.flightCode
-            }))
-        });
-    } catch (e) {
-        res.status(500).json({ error: 'Error fetching board' });
-    }
-});
-
-app.get('/api/carpool/matches', apiLimiter, requireCarpoolSession, async (req, res) => {
-    try {
-        const allMatches = await buildMatches();
-        const myRequests = await db.collection('carpool_requests').where('usn', '==', req.carpoolUser.usn).get();
-        const myRequestIds = myRequests.docs.map(d => d.id);
-
-        const filtered = allMatches.filter(m =>
-            m.users.some(u => u.usn === req.carpoolUser.usn)
-        );
-
-        res.json({
-            matches: filtered.map(match => {
-                const other = match.users.find(u => u.usn !== req.carpoolUser.usn) || match.users[1];
-                return {
-                    id: match.id,
-                    direction: match.direction,
-                    time: other.time,
-                    window: match.time,
-                    wait: match.wait,
-                    name: other.name || `Student ${String(other.usn || '0000').slice(-4)}`
-                };
-            }),
-            activeRequests: await getActiveRequestsCount(),
-            matchCount: filtered.length
-        });
-    } catch (e) {
-        res.status(500).json({ error: 'Error' });
-    }
-});
-
-app.post('/api/carpool/cancel', apiLimiter, requireCarpoolSession, async (req, res) => {
-    try {
-        const { requestId } = req.body || {};
-        if (!requestId) return res.status(400).json({ error: 'Request ID required' });
-
-        if (db) {
-            // Document ID is the USN
-            await db.collection('carpool_requests').doc(req.carpoolUser.usn).delete();
-            invalidateCarpoolCache(); // Clear cache on cancellation
-        }
-        publishMatches();
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: 'Cancel failed' });
-    }
+app.get('/api/carpool/matches', apiLimiter, (req, res) => {
+    const matches = buildMatches();
+    res.json({
+        matches: matches.map(match => ({
+            id: match.id,
+            direction: match.direction,
+            time: match.time,
+            wait: match.wait,
+            name: `Student ${match.users[1].usn.slice(-4)}`
+        })),
+        activeRequests: getActiveRequestsCount(),
+        matchCount: matches.length
+    });
 });
 
 app.post('/api/carpool/accept', apiLimiter, requireCarpoolSession, async (req, res) => {
     try {
         const { matchId } = req.body || {};
         if (!matchId) return res.status(400).json({ error: 'Match required' });
-        const matches = await buildMatches();
-        const match = matches.find(item => item.id === matchId);
+        const match = buildMatches().find(item => item.id === matchId);
         if (!match) return res.status(404).json({ error: 'Match not found' });
         if (!mailer) return res.status(503).json({ error: 'Email service offline' });
         const requester = req.carpoolUser;
@@ -747,28 +371,12 @@ app.get('/api/carpool/stream', apiLimiter, (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
     sseClients.add(res);
-    // Send initial state immediately
-    (async () => {
-        const [matches, requests] = await Promise.all([buildMatches(), fetchActiveRequests()]);
-        res.write(`data: ${JSON.stringify({
-            matches: matches.map(m => ({
-                id: m.id,
-                direction: m.direction,
-                time: m.time,
-                wait: m.wait,
-                name: `Student ${String(m.users[1].usn || '0000').slice(-4)}`
-            })),
-            activeRequests: requests.length,
-            publicRequests: requests.map(r => ({
-                id: r.id,
-                name: r.name || `Student ${String(r.usn || '0000').slice(-4)}`,
-                photo: r.photo,
-                direction: r.direction,
-                time: r.time,
-                flightCode: r.flightCode
-            }))
-        })}\n\n`);
-    })();
+    res.write(`data: ${JSON.stringify({
+        matches: [],
+        activeRequests: getActiveRequestsCount(),
+        matchCount: 0
+    })}\n\n`);
+    publishMatches();
 
     const keepAlive = setInterval(() => res.write(': keep-alive\n\n'), 20000);
     req.on('close', () => {
@@ -783,38 +391,17 @@ app.get('/api/verify', authenticateToken, (req, res) => {
 
 app.get('/api/students', apiLimiter, authenticateToken, async (req, res) => {
     try {
-        let students = [];
-
-        // Fetch from Firebase
-        if (db) {
-            try {
-                const snapshot = await db.collection('students').get();
-                if (!snapshot.empty) {
-                    students = snapshot.docs.map(doc => doc.data());
-                }
-            } catch (err) {
-                console.error("Firebase fetch error:", err);
-            }
-        }
-
-        // Fallback to JSON if Firebase returned nothing or failed
-        if (students.length === 0) {
-            try {
-                const data = fs.readFileSync(path.join(__dirname, 'students.json'), 'utf8');
-                students = JSON.parse(data);
-            } catch (e) {
-                // Ignore if JSON missing, just return empty list or what we have
-            }
-        }
-
-        const sanitized = students.map(s => {
-            const { abc_id, ...rest } = s;
-            return rest;
-        });
-        res.json(sanitized);
+        const firebaseStudents = await loadStudentsFromFirestore();
+        if (firebaseStudents) return res.json(firebaseStudents);
+        const fallbackStudents = loadStudentsFromFile();
+        res.json(fallbackStudents);
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: 'Error loading data' });
+        try {
+            const fallbackStudents = loadStudentsFromFile();
+            return res.json(fallbackStudents);
+        } catch (fallbackError) {
+            return res.status(500).json({ error: 'Error loading data' });
+        }
     }
 });
 
