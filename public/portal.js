@@ -56,24 +56,15 @@ document.addEventListener('DOMContentLoaded', () => {
         hideSearchError();
 
         try {
-            // Since we don't have a public student lookup endpoint, 
-            // we'll try to find the student via the carpool OTP request route
-            // which seems to validate USNs.
-            const res = await fetch('/api/carpool/request-otp', {
+            const res = await fetch('/api/portal/request-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usn, email: 'lookup@internal' }) // Dummy email for validation
+                body: JSON.stringify({ usn })
             });
             const data = await res.json();
 
-            // Note: server.js doesn't actually return student data here.
-            // This is a limitation of the current API. 
-            // For now, we'll assume if success=true, the student exists.
-            if (data.success || data.error.includes('Too many attempts')) {
-                // In a real scenario, we'd fetch actual student data.
-                // Since the API is restricted, we'll show the profile section
-                // and guide the user to verify to see/edit data.
-                showProfile(usn);
+            if (data.success) {
+                showProfile(usn, data.emailHint);
             } else {
                 showSearchError(data.error || 'Student not found');
             }
@@ -84,16 +75,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function showProfile(usn) {
+    function showProfile(usn, emailHint) {
         searchSection.classList.add('hidden');
         profileSection.classList.remove('hidden');
 
-        // Mocking name/display for now as API doesn't provide it publicly
         profileName.textContent = 'STUDENT_' + usn.slice(-4);
         detailUsn.textContent = usn;
         photoInitial.textContent = usn.slice(-1);
 
-        // Reset flags
+        otpSentMsg.textContent = `Verification code sent to ${emailHint}`;
+        otpRequestSection.classList.add('hidden');
+        otpVerifySection.classList.remove('hidden');
+
         verifyCard.classList.remove('hidden');
         updateCard.classList.add('hidden');
     }
@@ -101,24 +94,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Verification Logic ---
     requestOtpBtn.addEventListener('click', async () => {
         const usn = detailUsn.textContent;
-        // In this flow, we need the actual email. 
-        // We'll prompt the user if we don't have it (though index.html doesn't have an email field in search)
-        // For now, we'll try to use the carpool route.
         requestOtpBtn.disabled = true;
         requestOtpBtn.textContent = 'SENDING_CODE...';
 
         try {
-            const res = await fetch('/api/carpool/request-otp', {
+            const res = await fetch('/api/portal/request-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usn, email: 'student@nst.edu' }) // Simplified for demo
+                body: JSON.stringify({ usn })
             });
             const data = await res.json();
 
             if (data.success) {
                 otpRequestSection.classList.add('hidden');
                 otpVerifySection.classList.remove('hidden');
-                otpSentMsg.textContent = 'Verification code sent to institutional email.';
+                otpSentMsg.textContent = `Verification code sent to ${data.emailHint}`;
             } else {
                 showOtpError(data.error || 'Failed to send code');
             }
@@ -139,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         verifyOtpBtn.textContent = 'VERIFYING...';
 
         try {
-            const res = await fetch('/api/carpool/verify-otp', {
+            const res = await fetch('/api/portal/verify-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ usn, otp })
@@ -150,7 +140,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 verificationToken = data.token;
                 verifyCard.classList.add('hidden');
                 updateCard.classList.remove('hidden');
-                // Fill form (in real app, data would come from the verify response)
+
+                // Populate profile data with the actual fetch details
+                const s = data.student;
+                profileName.textContent = s.name || 'Unknown';
+                detailEmail.textContent = s.email || 'Not provided';
+                detailInstEmail.textContent = s.institutional_email || 'Not provided';
+                detailGender.textContent = s.gender || 'Not provided';
+                detailBirthday.textContent = s.birthday || 'Not provided';
+                profileBatch.textContent = s.batch || 'Unassigned';
+
+                githubInput.value = s.github || '';
+                linkedinInput.value = s.linkedin || '';
+                emailInput.value = s.email || '';
+                birthdayInput.value = s.birthday || '';
+
+                if (s.photo) {
+                    profilePhoto.src = s.photo;
+                    profilePhoto.classList.remove('hidden');
+                    photoPlaceholder.classList.add('hidden');
+                }
             } else {
                 showOtpError(data.error || 'Invalid code');
             }

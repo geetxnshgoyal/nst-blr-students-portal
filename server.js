@@ -95,8 +95,8 @@ function minutesDiff(a, b) {
 
 function cleanOldEntries() {
     const now = Date.now();
-    for (const [usn, entry] of otpStore.entries()) {
-        if (entry.expiresAt <= now) otpStore.delete(usn);
+    for (const [key, entry] of otpStore.entries()) {
+        if (entry.expiresAt <= now) otpStore.delete(key);
     }
     for (const [token, entry] of carpoolSessions.entries()) {
         if (entry.expiresAt <= now) carpoolSessions.delete(token);
@@ -316,6 +316,62 @@ app.get('/api/admin/students', apiLimiter, authenticateToken, async (req, res) =
     }
 });
 
+app.post('/api/portal/request-otp', apiLimiter, async (req, res) => {
+    try {
+        const { usn } = req.body || {};
+        if (!usn) return res.status(400).json({ error: 'USN required' });
+        if (!/^[0-9]{10}$/.test(usn)) return res.status(400).json({ error: 'Invalid USN' });
+
+        let students = await loadStudentsFromFirestore() || loadStudentsFromFile();
+        const student = students.find(s => s.usn === usn);
+
+        if (!student) return res.status(404).json({ error: 'Student not found' });
+
+        const email = student.institutional_email || student.email;
+        if (!email) return res.status(400).json({ error: 'No email found for student' });
+
+        if (!mailer) return res.status(503).json({ error: 'Email service offline' });
+
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        otpStore.set(usn + "_portal", { otp, email, expiresAt: Date.now() + 10 * 60 * 1000 });
+
+        await mailer.sendMail({
+            from: process.env.SMTP_FROM || process.env.SMTP_USER,
+            to: email,
+            subject: 'NST Portal OTP',
+            text: `Your NST portal login OTP is ${otp}. It expires in 10 minutes.`
+        });
+
+        res.json({ success: true, emailHint: email.replace(/(.{2})(.*)(@.*)/, '$1***$3') });
+    } catch (e) {
+        res.status(500).json({ error: 'OTP send failed' });
+    }
+});
+
+app.post('/api/portal/verify-otp', apiLimiter, async (req, res) => {
+    try {
+        const { usn, otp } = req.body || {};
+        if (!usn || !otp) return res.status(400).json({ error: 'USN and OTP required' });
+
+        const entry = otpStore.get(usn + "_portal");
+        if (!entry || entry.expiresAt <= Date.now()) return res.status(400).json({ error: 'OTP expired' });
+        if (entry.otp !== otp) return res.status(400).json({ error: 'OTP invalid' });
+
+        otpStore.delete(usn + "_portal");
+
+        let students = await loadStudentsFromFirestore() || loadStudentsFromFile();
+        const student = students.find(s => s.usn === usn);
+
+        if (!student) return res.status(404).json({ error: 'Student not found' });
+
+        const token = jwt.sign({ usn, student: true, t: Date.now() }, JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({ success: true, token, student });
+    } catch (e) {
+        res.status(500).json({ error: 'Verification failed' });
+    }
+});
+
 app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
     try {
         const { usn, email } = req.body || {};
@@ -323,7 +379,7 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
         if (!/^[0-9]{10}$/.test(usn)) return res.status(400).json({ error: 'Invalid USN' });
         if (!mailer) return res.status(503).json({ error: 'Email service offline' });
         const otp = String(Math.floor(100000 + Math.random() * 900000));
-        otpStore.set(usn, { otp, email, expiresAt: Date.now() + 10 * 60 * 1000 });
+        otpStore.set(usn + "_carpool", { otp, email, expiresAt: Date.now() + 10 * 60 * 1000 });
         await mailer.sendMail({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to: email,
@@ -339,7 +395,7 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
 app.post('/api/carpool/verify-otp', apiLimiter, (req, res) => {
     const { usn, otp } = req.body || {};
     if (!usn || !otp) return res.status(400).json({ error: 'USN and OTP required' });
-    const entry = otpStore.get(usn);
+    const entry = otpStore.get(usn + "_carpool");
     if (!entry || entry.expiresAt <= Date.now()) return res.status(400).json({ error: 'OTP expired' });
     if (entry.otp !== otp) return res.status(400).json({ error: 'OTP invalid' });
     const token = makeToken();
@@ -348,7 +404,7 @@ app.post('/api/carpool/verify-otp', apiLimiter, (req, res) => {
         email: entry.email,
         expiresAt: Date.now() + 60 * 60 * 1000
     });
-    otpStore.delete(usn);
+    otpStore.delete(usn + "_carpool");
     res.json({ success: true, token, email: entry.email });
 });
 
