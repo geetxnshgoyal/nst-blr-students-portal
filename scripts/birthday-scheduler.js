@@ -365,5 +365,6 @@ function startBirthdayScheduler(firestore, mailer) {
 }
 
 module.exports = {
-    startBirthdayScheduler
+    startBirthdayScheduler,
+    checkBirthdaysAndSendEmails
 };
