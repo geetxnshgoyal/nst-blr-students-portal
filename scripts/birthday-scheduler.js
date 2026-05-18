@@ -56,8 +56,8 @@ async function sendBirthdayWishEmail(mailer, student) {
     <title>Happy Birthday!</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; background-color: #0d0e12; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #ffffff;">
-    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0d0e12; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #ffffff;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding: 40px 20px;">
         <tr>
             <td align="center">
                 <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #16171f; border: 1px solid #2a2b36; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
@@ -201,8 +201,8 @@ async function sendClassmateBirthdayReminder(mailer, birthdayStudents, allStuden
     <title>Special Day Reminder!</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; background-color: #0d0e12; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #ffffff;">
-    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0d0e12; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #ffffff;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding: 40px 20px;">
         <tr>
             <td align="center">
                 <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #16171f; border: 1px solid #2a2b36; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
