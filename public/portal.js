@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailInstEmail = document.getElementById('detail-inst-email');
     const detailGender = document.getElementById('detail-gender');
     const detailBirthday = document.getElementById('detail-birthday');
+    const detailBloodGroup = document.getElementById('detail-blood-group');
 
     // OTP Verification
     const verifyCard = document.getElementById('verify-card');
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const linkedinInput = document.getElementById('linkedin-input');
     const emailInput = document.getElementById('email-input');
     const birthdayInput = document.getElementById('birthday-input');
+    const bloodGroupInput = document.getElementById('blood-group-input');
     const successMessage = document.getElementById('success-message');
 
     // Global State
@@ -151,12 +153,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 detailInstEmail.textContent = s.institutional_email || 'Not provided';
                 detailGender.textContent = s.gender || 'Not provided';
                 detailBirthday.textContent = s.birthday || 'Not provided';
+                detailBloodGroup.textContent = s.blood_group || s.bloodGroup || 'Not provided';
                 profileBatch.textContent = s.batch || 'Unassigned';
 
                 githubInput.value = s.github || '';
                 linkedinInput.value = s.linkedin || '';
                 emailInput.value = s.email || '';
                 birthdayInput.value = s.birthday || '';
+                bloodGroupInput.value = s.blood_group || s.bloodGroup || '';
 
                 if (s.photo) {
                     profilePhoto.src = s.photo;

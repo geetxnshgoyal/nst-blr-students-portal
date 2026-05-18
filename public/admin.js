@@ -362,6 +362,7 @@ function openStudentModal(usn) {
                 <div class="modal-detail-row"><span class="modal-label">Institutional Email</span> <span class="modal-value">${s.institutional_email || '-'}</span></div>
                 <div class="modal-detail-row"><span class="modal-label">Gender</span> <span class="modal-value">${s.gender || '-'}</span></div>
                 <div class="modal-detail-row"><span class="modal-label">Birthday</span> <span class="modal-value">${s.birthday || '-'}</span></div>
+                <div class="modal-detail-row"><span class="modal-label">Blood Group</span> <span class="modal-value" style="font-weight:600; color:var(--primary-600);">${s.blood_group || s.bloodGroup || '-'}</span></div>
                 
                 <div class="modal-detail-row">
                     <span class="modal-label">LinkedIn</span> 
