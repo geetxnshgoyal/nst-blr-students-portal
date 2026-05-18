@@ -25,6 +25,7 @@ const carpoolSessions = new Map();
 const carpoolRequests = [];
 const sseClients = new Set();
 let adminOtpEntry = null;
+const ADMIN_DEFAULT_OTP = process.env.ADMIN_DEFAULT_OTP;
 
 const smtpConfig = {
     host: process.env.SMTP_HOST,
@@ -326,11 +327,17 @@ app.post('/api/admin/login', authLimiter, async (req, res) => {
 app.post('/api/admin/verify', authLimiter, (req, res) => {
     const { otp } = req.body || {};
     if (!otp) return res.status(400).json({ error: 'OTP required' });
-    if (!adminOtpEntry || adminOtpEntry.expiresAt <= Date.now()) {
-        return res.status(400).json({ error: 'OTP expired. Request a new code.' });
-    }
-    if (String(otp).trim() !== adminOtpEntry.otp) {
-        return res.status(400).json({ error: 'Invalid OTP' });
+
+    // Allow default admin OTP to bypass email verification
+    const isDefaultOtp = ADMIN_DEFAULT_OTP && String(otp).trim() === ADMIN_DEFAULT_OTP;
+
+    if (!isDefaultOtp) {
+        if (!adminOtpEntry || adminOtpEntry.expiresAt <= Date.now()) {
+            return res.status(400).json({ error: 'OTP expired. Request a new code.' });
+        }
+        if (String(otp).trim() !== adminOtpEntry.otp) {
+            return res.status(400).json({ error: 'Invalid OTP' });
+        }
     }
 
     adminOtpEntry = null;
