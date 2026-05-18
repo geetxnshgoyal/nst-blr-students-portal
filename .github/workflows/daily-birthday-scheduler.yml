@@ -17,6 +17,9 @@ jobs:
             DOMAIN="nst-blr-students-portal.vercel.app"
           fi
           
+          # Automatically strip http://, https://, and trailing slashes if present in variable
+          DOMAIN=$(echo "$DOMAIN" | sed -e 's|^https://||' -e 's|^http://||' -e 's|/$||')
+          
           SECRET="${{ secrets.CRON_SECRET }}"
           
           echo "⚡ Triggering Daily Birthday checklist on: $DOMAIN"
