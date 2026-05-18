@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Profile Details
     const detailUsn = document.getElementById('detail-usn');
     const detailEmail = document.getElementById('detail-email');
+    const detailMobile = document.getElementById('detail-mobile');
     const detailInstEmail = document.getElementById('detail-inst-email');
     const detailGender = document.getElementById('detail-gender');
     const detailBirthday = document.getElementById('detail-birthday');
@@ -143,8 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Populate profile data with the actual fetch details
                 const s = data.student;
+                const mobile = s.mobile || s.phone || s.phone_number || s.phoneNumber;
                 profileName.textContent = s.name || 'Unknown';
                 detailEmail.textContent = s.email || 'Not provided';
+                detailMobile.textContent = mobile || 'Not provided';
                 detailInstEmail.textContent = s.institutional_email || 'Not provided';
                 detailGender.textContent = s.gender || 'Not provided';
                 detailBirthday.textContent = s.birthday || 'Not provided';

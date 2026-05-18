@@ -21,6 +21,10 @@ const closeModal = document.querySelector('.close-modal');
 
 let allStudents = [];
 
+function getMobileNumber(student) {
+    return student?.mobile || student?.phone || student?.phone_number || student?.phoneNumber || '';
+}
+
 function showMessage(msg, isError = false) {
     messageBox.querySelector('span').textContent = msg;
     messageBox.classList.remove('hidden');
@@ -230,6 +234,9 @@ function renderStudents(students) {
                     <div style="font-size: 0.8rem; color: var(--primary-500); margin-top: 4px;">
                         ${s.email || 'No Email'}
                     </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">
+                        ${getMobileNumber(s) || 'No Mobile'}
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -351,6 +358,7 @@ function openStudentModal(usn) {
                 
                 <div class="modal-detail-row"><span class="modal-label">Batch</span> <span class="modal-value">${s.batch || '-'}</span></div>
                 <div class="modal-detail-row"><span class="modal-label">Email</span> <span class="modal-value">${s.email || '-'}</span></div>
+                <div class="modal-detail-row"><span class="modal-label">Mobile</span> <span class="modal-value">${getMobileNumber(s) || '-'}</span></div>
                 <div class="modal-detail-row"><span class="modal-label">Institutional Email</span> <span class="modal-value">${s.institutional_email || '-'}</span></div>
                 <div class="modal-detail-row"><span class="modal-label">Gender</span> <span class="modal-value">${s.gender || '-'}</span></div>
                 <div class="modal-detail-row"><span class="modal-label">Birthday</span> <span class="modal-value">${s.birthday || '-'}</span></div>
