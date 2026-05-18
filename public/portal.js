@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Populate profile data with the actual fetch details
                 const s = data.student;
-                const mobile = s.mobile || s.phone || s.phone_number || s.phoneNumber;
+                const mobile = s.mobile_number || s.mobile || s.phone || s.phone_number || s.phoneNumber;
                 profileName.textContent = s.name || 'Unknown';
                 detailEmail.textContent = s.email || 'Not provided';
                 detailMobile.textContent = mobile || 'Not provided';

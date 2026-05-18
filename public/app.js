@@ -1,6 +1,10 @@
 let authToken = null;
 let students = [];
 
+function getMobileNumber(student) {
+    return student?.mobile_number || student?.mobile || student?.mobileNumber || student?.phone || student?.phone_number || student?.phoneNumber || '';
+}
+
 const authScreen = document.getElementById('auth-screen');
 const mainContent = document.getElementById('main-content');
 const authForm = document.getElementById('auth-form');
@@ -66,6 +70,7 @@ const modal = document.getElementById('modal');
 const modalPhoto = document.getElementById('modal-photo');
 const modalName = document.getElementById('modal-name');
 const modalEmail = document.getElementById('modal-email');
+const modalMobile = document.getElementById('modal-mobile');
 const modalInstitutionalEmail = document.getElementById('modal-institutional-email');
 const modalUSN = document.getElementById('modal-usn');
 const modalGender = document.getElementById('modal-gender');
@@ -106,14 +111,15 @@ function displayStudents(studentsToShow) {
         const card = document.createElement('div');
         card.className = 'student-card';
         card.style.animationDelay = `${index * 0.03}s`;
+        const mobile = getMobileNumber(student);
         let badges = '';
         if (student.github && student.github.trim() !== '') badges += ` <span class="social-badge github-badge" title="GitHub">🔗</span>`;
         if (student.linkedin && student.linkedin.trim() !== '') badges += ` <span class="social-badge linkedin-badge" title="LinkedIn">💼</span>`;
         const initial = student.name ? student.name.charAt(0).toUpperCase() : '?';
         if (student.photo && student.photo.trim() !== '') {
-            card.innerHTML = `<img src="${student.photo}" alt="${student.name}" onerror="this.outerHTML='<div class=\\'no-photo\\'>${initial}</div>'"><div class="name">${student.name}${badges}</div><div class="email">${student.email || 'No email'}</div>`;
+            card.innerHTML = `<img src="${student.photo}" alt="${student.name}" onerror="this.outerHTML='<div class=\\'no-photo\\'>${initial}</div>'"><div class="name">${student.name}${badges}</div><div class="email">${student.email || 'No email'}</div><div class="email">${mobile || 'No mobile'}</div>`;
         } else {
-            card.innerHTML = `<div class="no-photo">${initial}</div><div class="name">${student.name}${badges}</div><div class="email">${student.email || 'No email'}</div>`;
+            card.innerHTML = `<div class="no-photo">${initial}</div><div class="name">${student.name}${badges}</div><div class="email">${student.email || 'No email'}</div><div class="email">${mobile || 'No mobile'}</div>`;
         }
         card.onclick = () => showModal(student);
         studentGrid.appendChild(card);
@@ -155,6 +161,7 @@ function showModal(student) {
     }
     modalName.textContent = student.name || 'Unknown';
     modalEmail.textContent = student.email || 'Not provided';
+    if (modalMobile) modalMobile.textContent = getMobileNumber(student) || 'Not provided';
     modalInstitutionalEmail.textContent = student.institutional_email || 'Not provided';
     modalUSN.textContent = student.usn || 'Not provided';
     modalGender.textContent = (student.gender || 'Not provided').charAt(0).toUpperCase() + (student.gender || 'not provided').slice(1);

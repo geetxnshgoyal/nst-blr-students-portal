@@ -22,7 +22,7 @@ const closeModal = document.querySelector('.close-modal');
 let allStudents = [];
 
 function getMobileNumber(student) {
-    return student?.mobile || student?.phone || student?.phone_number || student?.phoneNumber || '';
+    return student?.mobile_number || student?.mobile || student?.phone || student?.phone_number || student?.phoneNumber || '';
 }
 
 function showMessage(msg, isError = false) {

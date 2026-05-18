@@ -61,7 +61,44 @@ try {
 
 function sanitizeStudents(students) {
     return students.map(student => {
-        const { abc_id, ...rest } = student;
+        const {
+            abc_id,
+            imported_doc,
+            importedDoc,
+            phone,
+            phone_number,
+            phoneNumber,
+            mobile_imported,
+            mobileImported,
+            migratedFromDoc,
+            migrated_from_doc,
+            importedFromDoc,
+            imported_from_doc,
+            mobile,
+            mobileNumber,
+            mobile_number,
+            ...rest
+        } = student || {};
+
+        const canonicalMobile = [
+            mobile_number,
+            mobile_imported,
+            mobileImported,
+            migratedFromDoc,
+            migrated_from_doc,
+            importedFromDoc,
+            imported_from_doc,
+            mobile,
+            mobileNumber,
+            phone,
+            phone_number,
+            phoneNumber
+        ].find(value => String(value || '').trim() !== '');
+
+        if (canonicalMobile) {
+            rest.mobile_number = String(canonicalMobile).trim();
+        }
+
         return rest;
     });
 }
