@@ -570,6 +570,29 @@ app.all('/api/*', (req, res) => {
     res.status(404).json({ error: 'Not found' });
 });
 
+// Expose Serverless Cron trigger for Vercel / GitHub Actions
+app.get('/api/cron/birthday', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const secretQuery = req.query.secret;
+    const expectedSecret = process.env.CRON_SECRET;
+    
+    if (expectedSecret) {
+        const authorized = authHeader === `Bearer ${expectedSecret}` || secretQuery === expectedSecret;
+        if (!authorized) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+    }
+    
+    try {
+        const { checkBirthdaysAndSendEmails } = require('./scripts/birthday-scheduler');
+        await checkBirthdaysAndSendEmails(firestore, mailer, false);
+        res.json({ success: true, message: 'Birthday checklist processed.' });
+    } catch (err) {
+        console.error('❌ Cron: Birthday trigger error:', err);
+        res.status(500).json({ error: 'Failed to process birthday cron', details: err.message });
+    }
+});
+
 app.get('*', (req, res) => {
     if (req.path.includes('..') || req.path.includes('//')) {
         return res.status(403).json({ error: 'Access denied' });
@@ -580,6 +603,14 @@ app.get('*', (req, res) => {
 app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Server error' });
 });
+
+// Start the daily birthday scheduler
+try {
+    const { startBirthdayScheduler } = require('./scripts/birthday-scheduler');
+    startBirthdayScheduler(firestore, mailer);
+} catch (schedulerError) {
+    console.error('❌ Failed to start birthday scheduler:', schedulerError);
+}
 
 app.listen(PORT, () => {
     console.log(`Server: http://localhost:${PORT}`);
