@@ -173,7 +173,7 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            imgSrc: ["'self'", "data:", "blob:"],
+            imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
             scriptSrc: ["'self'", "'unsafe-inline'"],
             scriptSrcAttr: ["'unsafe-inline'"],
             connectSrc: ["'self'"],
