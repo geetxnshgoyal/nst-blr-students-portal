@@ -572,9 +572,14 @@ app.get('/api/cron/birthday', async (req, res) => {
     const secretQuery = req.query.secret;
     const expectedSecret = process.env.CRON_SECRET;
     
+    console.log(`[Cron Debug] expectedSecret: ${expectedSecret ? 'Defined (len: ' + expectedSecret.length + ')' : 'Undefined'}`);
+    console.log(`[Cron Debug] secretQuery: ${secretQuery ? 'Defined (len: ' + secretQuery.length + ')' : 'Undefined/Empty'}`);
+    console.log(`[Cron Debug] authHeader: ${authHeader ? 'Defined (len: ' + authHeader.length + ')' : 'Undefined/Empty'}`);
+
     if (expectedSecret) {
         const authorized = authHeader === `Bearer ${expectedSecret}` || secretQuery === expectedSecret;
         if (!authorized) {
+            console.warn(`[Cron Debug] Authorization check failed. queryMatches: ${secretQuery === expectedSecret}, headerMatches: ${authHeader === `Bearer ${expectedSecret}`}`);
             return res.status(401).json({ error: 'Unauthorized' });
         }
     }
