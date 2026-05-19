@@ -14,7 +14,7 @@ jobs:
           DOMAIN="${{ secrets.PORTAL_DOMAIN }}"
           # Fallback to default Vercel domain if secret is not set
           if [ -z "$DOMAIN" ]; then
-            DOMAIN="nst-blr-students-portal.vercel.app"
+            DOMAIN="nst-blr.vercel.app"
           fi
           
           # Automatically strip http://, https://, and trailing slashes if present in variable
