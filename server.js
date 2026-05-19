@@ -566,10 +566,6 @@ app.post('/api/logout', authenticateToken, (req, res) => {
     res.json({ success: true });
 });
 
-app.all('/api/*', (req, res) => {
-    res.status(404).json({ error: 'Not found' });
-});
-
 // Expose Serverless Cron trigger for Vercel / GitHub Actions
 app.get('/api/cron/birthday', async (req, res) => {
     const authHeader = req.headers.authorization;
@@ -591,6 +587,10 @@ app.get('/api/cron/birthday', async (req, res) => {
         console.error('❌ Cron: Birthday trigger error:', err);
         res.status(500).json({ error: 'Failed to process birthday cron', details: err.message });
     }
+});
+
+app.all('/api/*', (req, res) => {
+    res.status(404).json({ error: 'Not found' });
 });
 
 app.get('*', (req, res) => {
