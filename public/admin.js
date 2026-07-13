@@ -36,8 +36,8 @@ function normalizeBloodGroup(value) {
     const compact = trimmed
         .toUpperCase()
         .replace(/\s+/g, '')
-        .replace(/POSITIVE/g, '+')
-        .replace(/NEGATIVE/g, '-');
+        .replaceAll('POSITIVE', '+')
+        .replaceAll('NEGATIVE', '-');
 
     const aliases = {
         'OPOS': 'O+',
@@ -68,7 +68,7 @@ function normalizeBloodGroup(value) {
 
     if (aliases[compact]) return aliases[compact];
 
-    const match = compact.match(/^(AB|A|B|O)([+-])$/);
+    const match = /^(AB|A|B|O)([+-])$/.exec(compact);
     if (match) return `${match[1]}${match[2]}`;
 
     return trimmed.toUpperCase();
@@ -103,6 +103,7 @@ sendOtpBtn.addEventListener('click', async () => {
             showMessage(data.error, true);
         }
     } catch (e) {
+        console.error(e);
         showMessage('Failed to send OTP', true);
     } finally {
         sendOtpBtn.disabled = false;
@@ -134,6 +135,7 @@ verifyOtpBtn.addEventListener('click', async () => {
             showMessage(data.error, true);
         }
     } catch (e) {
+        console.error(e);
         showMessage('Verification failed', true);
     } finally {
         verifyOtpBtn.disabled = false;
@@ -236,6 +238,7 @@ document.getElementById('refresh-btn').addEventListener('click', async () => {
             btn.disabled = false;
         }, 1500);
     } catch (e) {
+        console.error(e);
         btn.textContent = '❌ Failed';
         setTimeout(() => {
             btn.textContent = '🔄 Refresh';

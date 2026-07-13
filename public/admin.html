@@ -756,7 +756,7 @@
             color: var(--text-primary);
             font-weight: 600;
             text-align: right;
-            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         /* ---------- Responsive ---------- */
@@ -835,7 +835,7 @@
                     <div id="otp-verify-view" class="hidden">
                         <div class="otp-input-group">
                             <input type="text" id="admin-otp" placeholder="Enter 6-digit OTP" maxlength="6"
-                                inputmode="numeric" autocomplete="one-time-code"
+                                inputmode="numeric" autocomplete="one-time-code" aria-label="One-time verification code"
                                 style="text-align: center; letter-spacing: 5px; font-size: 1.5rem;">
                         </div>
                         <button id="verify-otp-btn" class="verify-btn">Verify Access</button>
@@ -897,9 +897,9 @@
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
                             <input type="text" id="search-input" placeholder="Search by name or USN..."
-                                class="search-input">
+                                class="search-input" aria-label="Search by name or USN">
                         </div>
-                        <select id="sort-select" class="sort-select">
+                        <select id="sort-select" class="sort-select" aria-label="Sort options">
                             <option value="name">Sort by Name</option>
                             <option value="usn">Sort by USN</option>
                             <option value="batch">Sort by Batch</option>
