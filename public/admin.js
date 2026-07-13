@@ -13,6 +13,8 @@ const logoutBtn = document.getElementById('logout-btn');
 // New Controls
 const searchInput = document.getElementById('search-input');
 const sortSelect = document.getElementById('sort-select');
+const genderFilter = document.getElementById('gender-filter');
+const batchFilter = document.getElementById('batch-filter');
 const birthdaysSection = document.getElementById('birthdays-section');
 const birthdaysGrid = document.getElementById('birthdays-grid');
 const studentModal = document.getElementById('student-modal');
@@ -198,12 +200,21 @@ async function showDashboard() {
 function applyFilters() {
     const query = searchInput.value?.toLowerCase() || '';
     const sortKey = sortSelect.value; // 'name', 'usn', 'batch'
+    const genderVal = genderFilter.value; // 'all', 'male', 'female'
+    const batchVal = batchFilter.value; // 'all', 'batch 1', 'batch 2'
 
     // Filter
-    let filtered = allStudents.filter(s =>
-        s.name?.toLowerCase().includes(query) ||
-        s.usn?.toLowerCase().includes(query)
-    );
+    let filtered = allStudents.filter(s => {
+        if (s.status === 'left') return false;
+
+        const matchesSearch = s.name?.toLowerCase().includes(query) || s.usn?.toLowerCase().includes(query);
+        if (!matchesSearch) return false;
+
+        if (genderVal !== 'all' && s.gender?.toLowerCase() !== genderVal) return false;
+        if (batchVal !== 'all' && !s.batch?.toLowerCase().includes(batchVal)) return false;
+
+        return true;
+    });
 
     // Sort
     filtered.sort((a, b) => {
@@ -215,9 +226,31 @@ function applyFilters() {
     renderStudents(filtered);
 }
 
-
 searchInput.addEventListener('input', applyFilters);
 sortSelect.addEventListener('change', applyFilters);
+genderFilter.addEventListener('change', applyFilters);
+batchFilter.addEventListener('change', applyFilters);
+
+// Click helper on stats cards to filter students
+window.filterByStat = function(type) {
+    if (type === 'all') {
+        genderFilter.value = 'all';
+        batchFilter.value = 'all';
+    } else if (type === 'male') {
+        genderFilter.value = 'male';
+        batchFilter.value = 'all';
+    } else if (type === 'female') {
+        genderFilter.value = 'female';
+        batchFilter.value = 'all';
+    } else if (type === 'batch 1') {
+        genderFilter.value = 'all';
+        batchFilter.value = 'batch 1';
+    } else if (type === 'batch 2') {
+        genderFilter.value = 'all';
+        batchFilter.value = 'batch 2';
+    }
+    applyFilters();
+};
 
 // Birthday button - toggle birthday section
 document.getElementById('birthday-btn').addEventListener('click', () => {
