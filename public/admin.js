@@ -363,28 +363,88 @@ function calculateStats() {
         return groupA.localeCompare(groupB);
     });
 
+    // Outer shell of the panel
     bloodGroupStats.innerHTML = `
-        <h3>Blood Group Stats</h3>
-        <p>Count of students by blood group.</p>
-        <div class="blood-group-list">
-            ${orderedBloodGroups.map(([group, count]) => `
-                <div class="blood-group-pill">
-                    <span class="blood-group-pill-value">${count}</span>
-                    <span class="blood-group-pill-label">${group}</span>
-                </div>
-            `).join('')}
+        <div class="blood-group-header">
+            <div class="blood-group-header-text">
+                <h3>Blood Groups</h3>
+                <p>Student counts and distribution</p>
+            </div>
+            <div class="blood-group-toggle">
+                <button id="bg-view-grid" class="view-toggle-btn ${currentBgView === 'grid' ? 'active' : ''}" title="Grid View">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </button>
+                <button id="bg-view-chart" class="view-toggle-btn ${currentBgView === 'chart' ? 'active' : ''}" title="Distribution View">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                </button>
+            </div>
         </div>
+        <div id="blood-group-content-area"></div>
     `;
     bloodGroupStats.classList.remove('hidden');
 
-    // Make blood-group pills clickable to show students for that group
-    // Use a timeout to ensure DOM is updated before attaching listeners
-    setTimeout(() => {
-        const pills = bloodGroupStats.querySelectorAll('.blood-group-pill');
-        pills.forEach(pill => {
-            pill.style.cursor = 'pointer';
-            pill.addEventListener('click', () => {
-                const group = pill.querySelector('.blood-group-pill-label')?.textContent?.trim();
+    function renderBloodGroupContent() {
+        const contentArea = document.getElementById('blood-group-content-area');
+        if (!contentArea) return;
+
+        if (currentBgView === 'grid') {
+            contentArea.innerHTML = `
+                <div class="blood-group-grid">
+                    ${orderedBloodGroups.map(([group, count]) => {
+                        const hasData = count > 0;
+                        return `
+                            <div class="blood-group-card ${hasData ? 'has-data' : 'empty-data'}" data-group="${group}">
+                                <div class="blood-group-card-bg-droplet">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                                    </svg>
+                                </div>
+                                <span class="blood-group-card-value">${count}</span>
+                                <span class="blood-group-card-label">${group}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        } else {
+            contentArea.innerHTML = `
+                <div class="blood-group-chart">
+                    ${orderedBloodGroups.map(([group, count]) => {
+                        const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                        return `
+                            <div class="chart-row" data-group="${group}">
+                                <div class="chart-row-info">
+                                    <span class="chart-row-label">${group}</span>
+                                    <span class="chart-row-count">${count} <span style="font-size:0.75rem; font-weight:500; color:var(--text-muted);">(${percentage}%)</span></span>
+                                </div>
+                                <div class="chart-row-bar-container">
+                                    <div class="chart-row-bar-fill" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+    }
+
+    function attachBloodGroupListeners() {
+        const contentArea = document.getElementById('blood-group-content-area');
+        if (!contentArea) return;
+
+        const items = contentArea.querySelectorAll('.blood-group-card, .chart-row');
+        items.forEach(item => {
+            item.addEventListener('click', () => {
+                const group = item.getAttribute('data-group');
                 const studentsForGroup = allStudents.filter(s => {
                     if (s.status === 'left') return false;
                     const bg = normalizeBloodGroup(s.blood_group || s.bloodGroup);
@@ -395,27 +455,32 @@ function calculateStats() {
                 if (!studentModal || !modalBody) return;
 
                 if (studentsForGroup.length === 0) {
-                    modalBody.innerHTML = `<div style="padding:16px;">No students found for ${group}</div>`;
+                    modalBody.innerHTML = `<div style="padding:16px; text-align:center; color:var(--text-secondary);">No students found with blood group ${group}</div>`;
                 } else {
                     modalBody.innerHTML = `
-                        <div style="padding:12px 16px;">
-                            <h3 style="margin:0 0 8px;">${group} (${studentsForGroup.length})</h3>
-                            <ul style="list-style:none; padding:0; margin:0;">
+                        <div style="padding: 10px 0;">
+                            <div class="modal-directory-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                                </svg>
+                                <span>Blood Group: ${group} (${studentsForGroup.length})</span>
+                            </div>
+                            <div class="modal-directory-grid">
                                 ${studentsForGroup.map(s => `
-                                    <li style="margin:8px 0;">
-                                        <a href="#" data-usn="${s.usn || ''}" class="bg-student-link" style="color:var(--primary-600); text-decoration:none; font-weight:600;">${s.name || s.usn || 'Unknown'}</a>
-                                        <div style="font-size:0.85rem; color:var(--text-secondary);">${s.usn || ''}</div>
-                                    </li>
+                                    <div class="modal-directory-card" data-usn="${s.usn || ''}">
+                                        <img src="${s.photo || 'https://via.placeholder.com/42'}" class="modal-directory-photo">
+                                        <div class="modal-directory-name" title="${s.name || 'Unknown'}">${s.name || 'Unknown'}</div>
+                                        <div class="modal-directory-usn">${s.usn || ''}</div>
+                                    </div>
                                 `).join('')}
-                            </ul>
+                            </div>
                         </div>
                     `;
 
-                    // Attach click handlers to open individual student modal
-                    modalBody.querySelectorAll('.bg-student-link').forEach(link => {
-                        link.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const usn = link.getAttribute('data-usn');
+                    // Attach click handlers to open individual student details modal
+                    modalBody.querySelectorAll('.modal-directory-card').forEach(card => {
+                        card.addEventListener('click', () => {
+                            const usn = card.getAttribute('data-usn');
                             if (!usn) return;
                             openStudentModal(usn);
                         });
@@ -425,7 +490,35 @@ function calculateStats() {
                 studentModal.classList.remove('hidden');
             });
         });
-    }, 0);
+    }
+
+    // Initial render and attach listeners
+    renderBloodGroupContent();
+    attachBloodGroupListeners();
+
+    // Toggle view listeners
+    const toggleGridBtn = document.getElementById('bg-view-grid');
+    const toggleChartBtn = document.getElementById('bg-view-chart');
+    
+    if (toggleGridBtn && toggleChartBtn) {
+        toggleGridBtn.addEventListener('click', () => {
+            if (currentBgView === 'grid') return;
+            currentBgView = 'grid';
+            toggleGridBtn.classList.add('active');
+            toggleChartBtn.classList.remove('active');
+            renderBloodGroupContent();
+            attachBloodGroupListeners();
+        });
+        
+        toggleChartBtn.addEventListener('click', () => {
+            if (currentBgView === 'chart') return;
+            currentBgView = 'chart';
+            toggleChartBtn.classList.add('active');
+            toggleGridBtn.classList.remove('active');
+            renderBloodGroupContent();
+            attachBloodGroupListeners();
+        });
+    }
 }
 
 // ===== Birthdays Logic =====
