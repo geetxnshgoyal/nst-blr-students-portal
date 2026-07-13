@@ -224,6 +224,11 @@ document.getElementById('birthday-btn').addEventListener('click', () => {
     birthdaysSection.classList.toggle('hidden');
 });
 
+// Blood Stats button - toggle blood group section
+document.getElementById('blood-stats-btn').addEventListener('click', () => {
+    document.getElementById('blood-group-section').classList.toggle('hidden');
+});
+
 // Refresh button - reload all students
 document.getElementById('refresh-btn').addEventListener('click', async () => {
     const btn = document.getElementById('refresh-btn');

@@ -105,10 +105,6 @@
 
         /* ---------- Overview: stats + blood groups ---------- */
         .dashboard-overview {
-            display: grid;
-            grid-template-columns: minmax(0, 2.4fr) minmax(280px, 1fr);
-            gap: 18px;
-            align-items: start;
             margin-bottom: 26px;
         }
 
@@ -885,7 +881,6 @@
                     <!-- Stats overview -->
                     <div class="dashboard-overview">
                         <div id="stats-bar" class="stats-bar hidden"></div>
-                        <div id="blood-group-stats" class="blood-group-panel hidden"></div>
                     </div>
 
                     <!-- Controls -->
@@ -907,6 +902,9 @@
                         <button id="birthday-btn" class="action-btn secondary" title="Show Upcoming Birthdays">
                             🎂 Birthdays
                         </button>
+                        <button id="blood-stats-btn" class="action-btn secondary" title="Show Blood Group Distribution">
+                            🩸 Blood Stats
+                        </button>
                         <button id="refresh-btn" class="action-btn" title="Refresh Data">
                             🔄 Refresh
                         </button>
@@ -916,6 +914,11 @@
                     <div id="birthdays-section" class="birthdays-section hidden">
                         <h3>🎂 Upcoming Birthdays</h3>
                         <div id="birthdays-grid" class="birthdays-grid"></div>
+                    </div>
+
+                    <!-- Blood Group Distribution -->
+                    <div id="blood-group-section" class="birthdays-section hidden" style="margin-bottom: 30px;">
+                        <div id="blood-group-stats" class="blood-group-panel"></div>
                     </div>
 
                     <!-- Directory -->
