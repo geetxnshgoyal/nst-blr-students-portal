@@ -18,11 +18,59 @@ const birthdaysGrid = document.getElementById('birthdays-grid');
 const studentModal = document.getElementById('student-modal');
 const modalBody = document.getElementById('modal-body');
 const closeModal = document.querySelector('.close-modal');
+const bloodGroupStats = document.getElementById('blood-group-stats');
 
 let allStudents = [];
 
 function getMobileNumber(student) {
     return student?.mobile_number || student?.mobile || student?.phone || student?.phone_number || student?.phoneNumber || '';
+}
+
+function normalizeBloodGroup(value) {
+    if (!value) return '';
+
+    const trimmed = String(value).trim();
+    if (!trimmed) return '';
+
+    const compact = trimmed
+        .toUpperCase()
+        .replace(/\s+/g, '')
+        .replace(/POSITIVE/g, '+')
+        .replace(/NEGATIVE/g, '-');
+
+    const aliases = {
+        'OPOS': 'O+',
+        'OPOSITIVE': 'O+',
+        'O+VE': 'O+',
+        'ONEG': 'O-',
+        'ONEGATIVE': 'O-',
+        'O-VE': 'O-',
+        'APOS': 'A+',
+        'APOSITIVE': 'A+',
+        'A+VE': 'A+',
+        'ANEG': 'A-',
+        'ANEGATIVE': 'A-',
+        'A-VE': 'A-',
+        'BPOS': 'B+',
+        'BPOSITIVE': 'B+',
+        'B+VE': 'B+',
+        'BNEG': 'B-',
+        'BNEGATIVE': 'B-',
+        'B-VE': 'B-',
+        'ABPOS': 'AB+',
+        'ABPOSITIVE': 'AB+',
+        'AB+VE': 'AB+',
+        'ABNEG': 'AB-',
+        'ABNEGATIVE': 'AB-',
+        'AB-VE': 'AB-'
+    };
+
+    if (aliases[compact]) return aliases[compact];
+
+    const match = compact.match(/^(AB|A|B|O)([+-])$/);
+    if (match) return `${match[1]}${match[2]}`;
+
+    return trimmed.toUpperCase();
 }
 
 function showMessage(msg, isError = false) {
@@ -245,12 +293,20 @@ function renderStudents(students) {
 // ===== Stats Logic =====
 
 function calculateStats() {
-    const total = allStudents.length;
+    const activeStudents = allStudents.filter(s => s.status !== 'left');
+    const total = activeStudents.length;
     // Count MISSING data (as requested "left with each data")
-    const missingPhoto = allStudents.filter(s => !s.photo).length;
-    const missingDob = allStudents.filter(s => !s.birthday).length;
-    const missingGithub = allStudents.filter(s => !s.github).length;
-    const missingLinkedin = allStudents.filter(s => !s.linkedin).length;
+    const missingPhoto = activeStudents.filter(s => !s.photo).length;
+    const missingDob = activeStudents.filter(s => !s.birthday).length;
+    const missingGithub = activeStudents.filter(s => !s.github).length;
+    const missingLinkedin = activeStudents.filter(s => !s.linkedin).length;
+    const bloodGroupOrder = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+    const bloodGroupCounts = activeStudents.reduce((acc, student) => {
+        const bloodGroup = normalizeBloodGroup(student.blood_group || student.bloodGroup);
+        const key = bloodGroup || 'Not Set';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {});
 
     const statsBar = document.getElementById('stats-bar');
     if (!statsBar) return;
@@ -278,6 +334,87 @@ function calculateStats() {
         </div>
     `;
     statsBar.classList.remove('hidden');
+
+    if (!bloodGroupStats) return;
+
+    const orderedBloodGroups = Object.entries(bloodGroupCounts).sort(([groupA], [groupB]) => {
+        const indexA = bloodGroupOrder.indexOf(groupA);
+        const indexB = bloodGroupOrder.indexOf(groupB);
+
+        if (indexA !== -1 || indexB !== -1) {
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        }
+
+        if (groupA === 'Not Set') return 1;
+        if (groupB === 'Not Set') return -1;
+        return groupA.localeCompare(groupB);
+    });
+
+    bloodGroupStats.innerHTML = `
+        <h3>Blood Group Stats</h3>
+        <p>Count of students by blood group.</p>
+        <div class="blood-group-list">
+            ${orderedBloodGroups.map(([group, count]) => `
+                <div class="blood-group-pill">
+                    <span class="blood-group-pill-value">${count}</span>
+                    <span class="blood-group-pill-label">${group}</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    bloodGroupStats.classList.remove('hidden');
+
+    // Make blood-group pills clickable to show students for that group
+    // Use a timeout to ensure DOM is updated before attaching listeners
+    setTimeout(() => {
+        const pills = bloodGroupStats.querySelectorAll('.blood-group-pill');
+        pills.forEach(pill => {
+            pill.style.cursor = 'pointer';
+            pill.addEventListener('click', () => {
+                const group = pill.querySelector('.blood-group-pill-label')?.textContent?.trim();
+                const studentsForGroup = allStudents.filter(s => {
+                    if (s.status === 'left') return false;
+                    const bg = normalizeBloodGroup(s.blood_group || s.bloodGroup);
+                    if (!bg) return group === 'Not Set';
+                    return bg === group;
+                });
+
+                if (!studentModal || !modalBody) return;
+
+                if (studentsForGroup.length === 0) {
+                    modalBody.innerHTML = `<div style="padding:16px;">No students found for ${group}</div>`;
+                } else {
+                    modalBody.innerHTML = `
+                        <div style="padding:12px 16px;">
+                            <h3 style="margin:0 0 8px;">${group} (${studentsForGroup.length})</h3>
+                            <ul style="list-style:none; padding:0; margin:0;">
+                                ${studentsForGroup.map(s => `
+                                    <li style="margin:8px 0;">
+                                        <a href="#" data-usn="${s.usn || ''}" class="bg-student-link" style="color:var(--primary-600); text-decoration:none; font-weight:600;">${s.name || s.usn || 'Unknown'}</a>
+                                        <div style="font-size:0.85rem; color:var(--text-secondary);">${s.usn || ''}</div>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+
+                    // Attach click handlers to open individual student modal
+                    modalBody.querySelectorAll('.bg-student-link').forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const usn = link.getAttribute('data-usn');
+                            if (!usn) return;
+                            openStudentModal(usn);
+                        });
+                    });
+                }
+
+                studentModal.classList.remove('hidden');
+            });
+        });
+    }, 0);
 }
 
 // ===== Birthdays Logic =====

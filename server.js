@@ -1,11 +1,43 @@
-require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
+function loadEnvFileFallback() {
+    const envPath = path.join(__dirname, '.env');
+    if (!fs.existsSync(envPath)) return;
+
+    const envContent = fs.readFileSync(envPath, 'utf8');
+
+    for (const rawLine of envContent.split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith('#')) continue;
+
+        const separatorIndex = line.indexOf('=');
+        if (separatorIndex === -1) continue;
+
+        const key = line.slice(0, separatorIndex).trim();
+        let value = line.slice(separatorIndex + 1).trim();
+
+        if (!key || Object.prototype.hasOwnProperty.call(process.env, key)) continue;
+
+        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.slice(1, -1);
+        }
+
+        process.env[key] = value.replace(/\\n/g, '\n');
+    }
+}
+
+try {
+    require('dotenv').config();
+} catch {
+    loadEnvFileFallback();
+}
+
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
-const path = require('path');
-const fs = require('fs');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const admin = require('firebase-admin');
@@ -369,7 +401,7 @@ app.post('/api/portal/request-otp', apiLimiter, async (req, res) => {
         let students = await loadStudentsFromFirestore() || loadStudentsFromFile();
         const student = students.find(s => s.usn === usn);
 
-        if (!student) return res.status(404).json({ error: 'Student not found' });
+        if (!student || student.status === 'left') return res.status(404).json({ error: 'Student not found' });
 
         const email = student.institutional_email || student.email;
         if (!email) return res.status(400).json({ error: 'No email found for student' });
@@ -549,13 +581,18 @@ app.get('/api/verify', authenticateToken, (req, res) => {
 app.get('/api/students', apiLimiter, authenticateToken, async (req, res) => {
     try {
         const firebaseStudents = await loadStudentsFromFirestore();
-        if (firebaseStudents) return res.json(firebaseStudents);
+        if (firebaseStudents) {
+            const activeStudents = firebaseStudents.filter(s => s.status !== 'left');
+            return res.json(activeStudents);
+        }
         const fallbackStudents = loadStudentsFromFile();
-        res.json(fallbackStudents);
+        const activeFallback = fallbackStudents.filter(s => s.status !== 'left');
+        res.json(activeFallback);
     } catch (e) {
         try {
             const fallbackStudents = loadStudentsFromFile();
-            return res.json(fallbackStudents);
+            const activeFallback = fallbackStudents.filter(s => s.status !== 'left');
+            return res.json(activeFallback);
         } catch (fallbackError) {
             return res.status(500).json({ error: 'Error loading data' });
         }
