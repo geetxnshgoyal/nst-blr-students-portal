@@ -113,8 +113,8 @@ sendOtpBtn.addEventListener('click', async () => {
 
 // 2. Verify OTP
 verifyOtpBtn.addEventListener('click', async () => {
-    const otp = document.getElementById('admin-otp').value;
-    if (!otp || otp.length !== 6) return showMessage('Enter 6-digit code', true);
+    const otp = document.getElementById('admin-otp')?.value;
+    if (otp?.length !== 6) return showMessage('Enter 6-digit code', true);
 
     verifyOtpBtn.disabled = true;
     verifyOtpBtn.textContent = 'Verifying...';
@@ -196,13 +196,13 @@ async function showDashboard() {
 // ===== Filter & Sort Logic =====
 
 function applyFilters() {
-    const query = searchInput.value.toLowerCase();
+    const query = searchInput.value?.toLowerCase() || '';
     const sortKey = sortSelect.value; // 'name', 'usn', 'batch'
 
     // Filter
     let filtered = allStudents.filter(s =>
-        (s.name && s.name.toLowerCase().includes(query)) ||
-        (s.usn && s.usn.toLowerCase().includes(query))
+        s.name?.toLowerCase().includes(query) ||
+        s.usn?.toLowerCase().includes(query)
     );
 
     // Sort
@@ -440,6 +440,52 @@ function calculateStats() {
         }
     }
 
+    function handleBloodGroupClick(group) {
+        const studentsForGroup = allStudents.filter(s => {
+            if (s.status === 'left') return false;
+            const bg = normalizeBloodGroup(s.blood_group || s.bloodGroup);
+            if (!bg) return group === 'Not Set';
+            return bg === group;
+        });
+
+        if (!studentModal || !modalBody) return;
+
+        if (studentsForGroup.length === 0) {
+            modalBody.innerHTML = `<div style="padding:16px; text-align:center; color:var(--text-secondary);">No students found with blood group ${group}</div>`;
+        } else {
+            modalBody.innerHTML = `
+                <div style="padding: 10px 0;">
+                    <div class="modal-directory-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                        </svg>
+                        <span>Blood Group: ${group} (${studentsForGroup.length})</span>
+                    </div>
+                    <div class="modal-directory-grid">
+                        ${studentsForGroup.map(s => `
+                            <div class="modal-directory-card" data-usn="${s.usn || ''}">
+                                <img src="${s.photo || 'https://via.placeholder.com/42'}" class="modal-directory-photo">
+                                <div class="modal-directory-name" title="${s.name || 'Unknown'}">${s.name || 'Unknown'}</div>
+                                <div class="modal-directory-usn">${s.usn || ''}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Attach click handlers to open individual student details modal
+            modalBody.querySelectorAll('.modal-directory-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const usn = card.dataset.usn;
+                    if (!usn) return;
+                    openStudentModal(usn);
+                });
+            });
+        }
+
+        studentModal.classList.remove('hidden');
+    }
+
     function attachBloodGroupListeners() {
         const contentArea = document.getElementById('blood-group-content-area');
         if (!contentArea) return;
@@ -447,50 +493,8 @@ function calculateStats() {
         const items = contentArea.querySelectorAll('.blood-group-card, .chart-row');
         items.forEach(item => {
             item.addEventListener('click', () => {
-                const group = item.getAttribute('data-group');
-                const studentsForGroup = allStudents.filter(s => {
-                    if (s.status === 'left') return false;
-                    const bg = normalizeBloodGroup(s.blood_group || s.bloodGroup);
-                    if (!bg) return group === 'Not Set';
-                    return bg === group;
-                });
-
-                if (!studentModal || !modalBody) return;
-
-                if (studentsForGroup.length === 0) {
-                    modalBody.innerHTML = `<div style="padding:16px; text-align:center; color:var(--text-secondary);">No students found with blood group ${group}</div>`;
-                } else {
-                    modalBody.innerHTML = `
-                        <div style="padding: 10px 0;">
-                            <div class="modal-directory-title">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-                                </svg>
-                                <span>Blood Group: ${group} (${studentsForGroup.length})</span>
-                            </div>
-                            <div class="modal-directory-grid">
-                                ${studentsForGroup.map(s => `
-                                    <div class="modal-directory-card" data-usn="${s.usn || ''}">
-                                        <img src="${s.photo || 'https://via.placeholder.com/42'}" class="modal-directory-photo">
-                                        <div class="modal-directory-name" title="${s.name || 'Unknown'}">${s.name || 'Unknown'}</div>
-                                        <div class="modal-directory-usn">${s.usn || ''}</div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-
-                    // Attach click handlers to open individual student details modal
-                    modalBody.querySelectorAll('.modal-directory-card').forEach(card => {
-                        card.addEventListener('click', () => {
-                            const usn = card.getAttribute('data-usn');
-                            if (!usn) return;
-                            openStudentModal(usn);
-                        });
-                    });
-                }
-
-                studentModal.classList.remove('hidden');
+                const group = item.dataset.group;
+                handleBloodGroupClick(group);
             });
         });
     }
@@ -537,10 +541,10 @@ function checkBirthdays() {
             const parts = s.birthday.split('-');
             if (parts.length < 2) return null;
 
-            const day = parseInt(parts[0]);
-            const month = parseInt(parts[1]);
+            const day = Number.parseInt(parts[0], 10);
+            const month = Number.parseInt(parts[1], 10);
 
-            if (isNaN(day) || isNaN(month)) return null;
+            if (Number.isNaN(day) || Number.isNaN(month)) return null;
 
             // Calculate next birthday occurrence
             let nextBday = new Date(today.getFullYear(), month - 1, day);
@@ -553,10 +557,18 @@ function checkBirthdays() {
             // Calculate days until birthday
             const daysUntil = Math.ceil((nextBday - today) / (1000 * 60 * 60 * 24));
 
+            let daysUntilText = `in ${daysUntil} days`;
+            if (daysUntil === 0) {
+                daysUntilText = 'Today!';
+            } else if (daysUntil === 1) {
+                daysUntilText = 'Tomorrow';
+            }
+
             return {
                 ...s,
                 nextBday,
                 daysUntil,
+                daysUntilText,
                 displayDate: `${day}/${month}`
             };
         })
@@ -570,7 +582,7 @@ function checkBirthdays() {
                     <img src="${s.photo || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px;">
                     <div style="font-weight:600; font-size:0.9rem;">${s.name}</div>
                     <div style="color:var(--primary-600); font-size:0.8rem;">${s.displayDate}</div>
-                    <div style="color:var(--text-secondary); font-size:0.75rem;">${s.daysUntil === 0 ? 'Today!' : s.daysUntil === 1 ? 'Tomorrow' : `in ${s.daysUntil} days`}</div>
+                    <div style="color:var(--text-secondary); font-size:0.75rem;">${s.daysUntilText}</div>
                 </div>
             `).join('');
     } else {
