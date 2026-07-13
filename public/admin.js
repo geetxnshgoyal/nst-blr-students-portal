@@ -343,11 +343,12 @@ function renderStudents(students) {
 function calculateStats() {
     const activeStudents = allStudents.filter(s => s.status !== 'left');
     const total = activeStudents.length;
-    // Count MISSING data (as requested "left with each data")
-    const missingPhoto = activeStudents.filter(s => !s.photo).length;
-    const missingDob = activeStudents.filter(s => !s.birthday).length;
-    const missingGithub = activeStudents.filter(s => !s.github).length;
-    const missingLinkedin = activeStudents.filter(s => !s.linkedin).length;
+
+    const males = activeStudents.filter(s => s.gender?.toLowerCase() === 'male').length;
+    const females = activeStudents.filter(s => s.gender?.toLowerCase() === 'female').length;
+    const batch1 = activeStudents.filter(s => s.batch?.toLowerCase().includes('1')).length;
+    const batch2 = activeStudents.filter(s => s.batch?.toLowerCase().includes('2')).length;
+
     const bloodGroupOrder = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
     const bloodGroupCounts = {
         'O+': 0, 'O-': 0, 'A+': 0, 'A-': 0,
@@ -364,25 +365,25 @@ function calculateStats() {
     if (!statsBar) return;
 
     statsBar.innerHTML = `
-        <div class="stat-card">
+        <div class="stat-card" style="cursor: pointer;" onclick="filterByStat('all')">
             <div class="stat-value">${total}</div>
             <div class="stat-label">Total Students</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value" style="color:var(--error)">${missingPhoto}</div>
-            <div class="stat-label">Missing Photo</div>
+        <div class="stat-card" style="cursor: pointer;" onclick="filterByStat('male')">
+            <div class="stat-value" style="color:var(--primary-600)">${males}</div>
+            <div class="stat-label">Male</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value" style="color:var(--warning)">${missingDob}</div>
-            <div class="stat-label">Missing Birthday</div>
+        <div class="stat-card" style="cursor: pointer;" onclick="filterByStat('female')">
+            <div class="stat-value" style="color:#ec4899">${females}</div>
+            <div class="stat-label">Female</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value" style="color:var(--primary-500)">${missingGithub}</div>
-            <div class="stat-label">Missing GitHub</div>
+        <div class="stat-card" style="cursor: pointer;" onclick="filterByStat('batch 1')">
+            <div class="stat-value" style="color:var(--warning)">${batch1}</div>
+            <div class="stat-label">Batch 1</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value" style="color:var(--accent-500)">${missingLinkedin}</div>
-            <div class="stat-label">Missing LinkedIn</div>
+        <div class="stat-card" style="cursor: pointer;" onclick="filterByStat('batch 2')">
+            <div class="stat-value" style="color:var(--success)">${batch2}</div>
+            <div class="stat-label">Batch 2</div>
         </div>
     `;
     statsBar.classList.remove('hidden');
