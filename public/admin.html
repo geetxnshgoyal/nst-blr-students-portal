@@ -165,67 +165,260 @@
             letter-spacing: 0.03em;
         }
 
+        /* Premium Blood Group Panel Styling */
         .blood-group-panel {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 243, 255, 0.92) 100%);
-            border: 1px solid var(--primary-100);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 18px 20px;
+            padding: 20px;
             box-shadow: var(--shadow-sm);
+            transition: all var(--transition-normal);
         }
 
-        .blood-group-panel h3 {
-            margin: 0 0 4px;
-            font-size: 1.02rem;
+        .blood-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .blood-group-header-text h3 {
+            margin: 0;
+            font-size: 1.05rem;
             font-family: 'Outfit', sans-serif;
             font-weight: 700;
             color: var(--text-primary);
         }
 
-        .blood-group-panel p {
-            margin: 0;
-            font-size: 0.82rem;
+        .blood-group-header-text p {
+            margin: 2px 0 0;
+            font-size: 0.8rem;
             color: var(--text-secondary);
         }
 
-        .blood-group-list {
+        .blood-group-toggle {
+            display: inline-flex;
+            background: var(--gray-100);
+            padding: 3px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .view-toggle-btn {
+            background: transparent;
+            border: none;
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        .view-toggle-btn.active {
+            background: white;
+            color: var(--primary-600);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Grid View Layout */
+        .blood-group-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
-            margin-top: 16px;
         }
 
-        .blood-group-pill {
+        .blood-group-card {
             background: var(--bg-card);
-            border: 1px solid var(--primary-100);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 10px 8px;
-            box-shadow: var(--shadow-sm);
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-fast);
+        }
+
+        .blood-group-card.has-data {
+            border-color: rgba(139, 92, 246, 0.15);
+            background: linear-gradient(180deg, var(--bg-card) 0%, rgba(245, 243, 255, 0.2) 100%);
+        }
+
+        .blood-group-card.has-data:hover {
+            border-color: var(--primary-400);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.12);
+        }
+
+        .blood-group-card.empty-data {
+            opacity: 0.65;
+        }
+
+        .blood-group-card.empty-data:hover {
+            border-color: var(--border-color);
+            background: var(--gray-50);
+        }
+
+        .blood-group-card-bg-droplet {
+            position: absolute;
+            right: -6px;
+            bottom: -6px;
+            color: rgba(239, 68, 68, 0.05);
+            pointer-events: none;
+            transition: color var(--transition-fast);
+        }
+
+        .blood-group-card.has-data:hover .blood-group-card-bg-droplet {
+            color: rgba(239, 68, 68, 0.12);
+        }
+
+        .blood-group-card-value {
+            display: block;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .blood-group-card.has-data .blood-group-card-value {
+            color: var(--primary-600);
+        }
+
+        .blood-group-card-label {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        /* Distribution Chart View Layout */
+        .blood-group-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 4px 0;
+        }
+
+        .chart-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
+            transition: all var(--transition-fast);
+        }
+
+        .chart-row:hover {
+            background: var(--gray-50);
+            border-color: var(--border-color);
+        }
+
+        .chart-row-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .chart-row-label {
+            color: var(--text-primary);
+        }
+
+        .chart-row-count {
+            color: var(--primary-600);
+        }
+
+        .chart-row-bar-container {
+            height: 8px;
+            background: var(--gray-100);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-row-bar-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-full);
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Modal Directory List Styles */
+        .modal-directory-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 16px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .modal-directory-title svg {
+            color: #ef4444; /* red drop */
+            flex-shrink: 0;
+        }
+
+        .modal-directory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 4px;
+            scrollbar-width: thin;
+        }
+
+        .modal-directory-card {
+            background: var(--gray-50);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 10px;
             text-align: center;
             cursor: pointer;
             transition: all var(--transition-fast);
         }
 
-        .blood-group-pill:hover {
+        .modal-directory-card:hover {
             border-color: var(--primary-400);
+            background: white;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.18);
+            box-shadow: var(--shadow-sm);
         }
 
-        .blood-group-pill-value {
+        .modal-directory-photo {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary-100);
+            margin: 0 auto 8px;
             display: block;
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: var(--primary-600);
-            line-height: 1;
         }
 
-        .blood-group-pill-label {
-            display: block;
-            margin-top: 5px;
-            font-size: 0.76rem;
-            color: var(--text-secondary);
+        .modal-directory-name {
+            font-size: 0.82rem;
             font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+
+        .modal-directory-usn {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         /* ---------- Controls bar ---------- */

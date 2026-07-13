@@ -21,6 +21,7 @@ const closeModal = document.querySelector('.close-modal');
 const bloodGroupStats = document.getElementById('blood-group-stats');
 
 let allStudents = [];
+let currentBgView = 'grid';
 
 function getMobileNumber(student) {
     return student?.mobile_number || student?.mobile || student?.phone || student?.phone_number || student?.phoneNumber || '';
