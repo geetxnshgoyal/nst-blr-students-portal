@@ -301,12 +301,16 @@ function calculateStats() {
     const missingGithub = activeStudents.filter(s => !s.github).length;
     const missingLinkedin = activeStudents.filter(s => !s.linkedin).length;
     const bloodGroupOrder = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
-    const bloodGroupCounts = activeStudents.reduce((acc, student) => {
+    const bloodGroupCounts = {
+        'O+': 0, 'O-': 0, 'A+': 0, 'A-': 0,
+        'B+': 0, 'B-': 0, 'AB+': 0, 'AB-': 0,
+        'Not Set': 0
+    };
+    activeStudents.forEach(student => {
         const bloodGroup = normalizeBloodGroup(student.blood_group || student.bloodGroup);
         const key = bloodGroup || 'Not Set';
-        acc[key] = (acc[key] || 0) + 1;
-        return acc;
-    }, {});
+        bloodGroupCounts[key] = (bloodGroupCounts[key] || 0) + 1;
+    });
 
     const statsBar = document.getElementById('stats-bar');
     if (!statsBar) return;

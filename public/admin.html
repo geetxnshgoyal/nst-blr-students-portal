@@ -185,9 +185,16 @@
 
         .stats-bar {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(5, 1fr);
             gap: 15px;
             margin-bottom: 25px;
+        }
+
+        @media (max-width: 1200px) {
+            .stats-bar {
+                grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+                gap: 10px;
+            }
         }
 
         .dashboard-overview {
@@ -246,8 +253,8 @@
         }
 
         .blood-group-list {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-top: 14px;
         }
