@@ -265,6 +265,12 @@ birthdaysGrid.addEventListener('click', (e) => {
 });
 
 function renderStudents(students) {
+    const countChip = document.getElementById('student-count');
+    if (countChip) {
+        countChip.textContent = `${students.length} shown`;
+        countChip.classList.remove('hidden');
+    }
+
     if (students.length === 0) {
         studentsGrid.innerHTML = '<p style="text-align:center; width:100%; color: var(--text-secondary);">No students found.</p>';
         return;
