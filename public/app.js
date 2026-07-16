@@ -2,7 +2,7 @@ let authToken = null;
 let students = [];
 
 function getMobileNumber(student) {
-    return student?.mobile_number || student?.mobile || student?.mobileNumber || student?.phone || student?.phone_number || student?.phoneNumber || '';
+    return student?.mobile_number || '';
 }
 
 const authScreen = document.getElementById('auth-screen');

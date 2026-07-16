@@ -146,21 +146,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Populate profile data with the actual fetch details
                 const s = data.student;
-                const mobile = s.mobile_number || s.mobile || s.phone || s.phone_number || s.phoneNumber;
+                const mobile = s.mobile_number;
                 profileName.textContent = s.name || 'Unknown';
                 detailEmail.textContent = s.email || 'Not provided';
                 detailMobile.textContent = mobile || 'Not provided';
                 detailInstEmail.textContent = s.institutional_email || 'Not provided';
                 detailGender.textContent = s.gender || 'Not provided';
                 detailBirthday.textContent = s.birthday || 'Not provided';
-                detailBloodGroup.textContent = s.blood_group || s.bloodGroup || 'Not provided';
+                detailBloodGroup.textContent = s.blood_group || 'Not provided';
                 profileBatch.textContent = s.batch || 'Unassigned';
 
                 githubInput.value = s.github || '';
                 linkedinInput.value = s.linkedin || '';
                 emailInput.value = s.email || '';
                 birthdayInput.value = s.birthday || '';
-                bloodGroupInput.value = s.blood_group || s.bloodGroup || '';
+                bloodGroupInput.value = s.blood_group || '';
 
                 if (s.photo) {
                     profilePhoto.src = s.photo;

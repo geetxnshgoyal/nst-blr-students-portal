@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 function loadEnvFileFallback() {
     const envPath = path.join(__dirname, '.env');
@@ -17,13 +17,13 @@ function loadEnvFileFallback() {
         const key = line.slice(0, separatorIndex).trim();
         let value = line.slice(separatorIndex + 1).trim();
 
-        if (!key || Object.prototype.hasOwnProperty.call(process.env, key)) continue;
+        if (!key || Object.hasOwn(process.env, key)) continue;
 
         if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
             value = value.slice(1, -1);
         }
 
-        process.env[key] = value.replace(/\\n/g, '\n');
+        process.env[key] = value.replaceAll('\\n', '\n');
     }
 }
 
@@ -39,12 +39,13 @@ const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const nodemailer = require('nodemailer');
-const crypto = require('crypto');
-const admin = require('firebase-admin');
+const crypto = require('node:crypto');
+const { initializeApp, cert, getApps } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || require('crypto').randomBytes(64).toString('hex');
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
 let storedPasswordHash = null;
 
@@ -77,70 +78,24 @@ try {
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
     if (projectId && clientEmail && privateKey) {
-        if (!admin.apps.length) {
-            admin.initializeApp({
-                credential: admin.credential.cert({
+        const apps = getApps();
+        if (!apps || !apps.length) {
+            initializeApp({
+                credential: cert({
                     projectId,
                     clientEmail,
-                    privateKey: privateKey.replace(/\\n/g, '\n')
+                    privateKey: privateKey.replaceAll('\\n', '\n')
                 })
             });
         }
-        firestore = admin.firestore();
+        firestore = getFirestore();
     }
 } catch (e) {
+    console.error("Firestore init error:", e);
     firestore = null;
 }
 
-function sanitizeStudents(students) {
-    return students.map(student => {
-        const {
-            abc_id,
-            imported_doc,
-            importedDoc,
-            phone,
-            phone_number,
-            phoneNumber,
-            mobile_imported,
-            mobileImported,
-            migratedFromDoc,
-            migrated_from_doc,
-            importedFromDoc,
-            imported_from_doc,
-            mobile,
-            mobileNumber,
-            mobile_number,
-            ...rest
-        } = student || {};
 
-        const canonicalMobile = [
-            mobile_number,
-            mobile_imported,
-            mobileImported,
-            migratedFromDoc,
-            migrated_from_doc,
-            importedFromDoc,
-            imported_from_doc,
-            mobile,
-            mobileNumber,
-            phone,
-            phone_number,
-            phoneNumber
-        ].find(value => String(value || '').trim() !== '');
-
-        if (canonicalMobile) {
-            rest.mobile_number = String(canonicalMobile).trim();
-        }
-
-        return rest;
-    });
-}
-
-function loadStudentsFromFile() {
-    const data = fs.readFileSync(path.join(__dirname, 'students.json'), 'utf8');
-    const students = JSON.parse(data);
-    return sanitizeStudents(students);
-}
 
 async function loadStudentsFromFirestore() {
     if (!firestore) return null;
@@ -152,7 +107,7 @@ async function loadStudentsFromFirestore() {
         students.push(record);
     });
     students.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    return sanitizeStudents(students);
+    return students;
 }
 
 function makeToken() {
@@ -205,6 +160,7 @@ function getActiveRequestsCount() {
 }
 
 function publishMatches() {
+    cleanOldEntries();
     const matches = buildMatches();
     const payload = JSON.stringify({
         matches: matches.map(match => ({
@@ -215,7 +171,15 @@ function publishMatches() {
             name: `Student ${match.users[1].usn.slice(-4)}`
         })),
         activeRequests: getActiveRequestsCount(),
-        matchCount: matches.length
+        matchCount: matches.length,
+        publicRequests: carpoolRequests.map(r => ({
+            id: r.id,
+            name: r.name || `Student ${String(r.usn || '0000').slice(-4)}`,
+            photo: r.photo || '',
+            direction: r.direction,
+            time: r.time,
+            flightCode: r.flightCode
+        }))
     });
     for (const res of sseClients) {
         res.write(`data: ${payload}\n\n`);
@@ -285,7 +249,7 @@ const apiLimiter = rateLimit({
 
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = authHeader?.split(' ')[1];
     if (!token) return res.status(401).json({ error: 'Access denied' });
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: 'Invalid token' });
@@ -302,7 +266,7 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-    const blocked = ['/students.json', '/abc.txt', '/server.js', '/package.json', '/package-lock.json', '/.env'];
+    const blocked = ['/students_cleaned_year2.json', '/abc.txt', '/server.js', '/package.json', '/package-lock.json', '/.env'];
     if (blocked.includes(req.path.toLowerCase())) {
         return res.status(403).json({ error: 'Access denied' });
     }
@@ -326,13 +290,14 @@ app.post('/api/login', authLimiter, async (req, res) => {
         const token = jwt.sign({ a: true, t: Date.now() }, JWT_SECRET, { expiresIn: '1h' });
         res.json({ success: true, token });
     } catch (e) {
+        console.error("Login error:", e);
         res.status(500).json({ error: 'Server error' });
     }
 });
 
 app.post('/api/admin/login', authLimiter, async (req, res) => {
     try {
-        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        const otp = String(crypto.randomInt(100000, 1000000));
         adminOtpEntry = {
             otp,
             expiresAt: Date.now() + 10 * 60 * 1000
@@ -352,6 +317,7 @@ app.post('/api/admin/login', authLimiter, async (req, res) => {
             message: 'Verification code sent. Please enter OTP to continue.'
         });
     } catch (e) {
+        console.error("Admin verification send failed:", e);
         res.status(500).json({ error: 'Failed to send verification code' });
     }
 });
@@ -383,10 +349,12 @@ app.get('/api/admin/students', apiLimiter, authenticateToken, async (req, res) =
         const students = firebaseStudents || loadStudentsFromFile();
         res.json({ success: true, students });
     } catch (e) {
+        console.error("Firestore get students error, falling back to local file:", e);
         try {
             const fallbackStudents = loadStudentsFromFile();
             res.json({ success: true, students: fallbackStudents });
         } catch (fallbackError) {
+            console.error("Fallback students file load error:", fallbackError);
             res.status(500).json({ error: 'Error loading data' });
         }
     }
@@ -396,7 +364,7 @@ app.post('/api/portal/request-otp', apiLimiter, async (req, res) => {
     try {
         const { usn } = req.body || {};
         if (!usn) return res.status(400).json({ error: 'USN required' });
-        if (!/^[0-9]{10}$/.test(usn)) return res.status(400).json({ error: 'Invalid USN' });
+        if (!/^\d{10}$/.test(usn)) return res.status(400).json({ error: 'Invalid USN' });
 
         let students = await loadStudentsFromFirestore() || loadStudentsFromFile();
         const student = students.find(s => s.usn === usn);
@@ -408,7 +376,7 @@ app.post('/api/portal/request-otp', apiLimiter, async (req, res) => {
 
         if (!mailer) return res.status(503).json({ error: 'Email service offline' });
 
-        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        const otp = String(crypto.randomInt(100000, 1000000));
         otpStore.set(usn + "_portal", { otp, email, expiresAt: Date.now() + 10 * 60 * 1000 });
 
         await mailer.sendMail({
@@ -418,8 +386,9 @@ app.post('/api/portal/request-otp', apiLimiter, async (req, res) => {
             text: `Your NST portal login OTP is ${otp}. It expires in 10 minutes.`
         });
 
-        res.json({ success: true, emailHint: email.replace(/(.{2})(.*)(@.*)/, '$1***$3') });
+        res.json({ success: true, emailHint: email.replace(/(.{2})([^@]*)(@.*)/, '$1***$3') });
     } catch (e) {
+        console.error("Portal OTP send error:", e);
         res.status(500).json({ error: 'OTP send failed' });
     }
 });
@@ -444,26 +413,41 @@ app.post('/api/portal/verify-otp', apiLimiter, async (req, res) => {
 
         res.json({ success: true, token, student });
     } catch (e) {
+        console.error("Portal verification failed:", e);
         res.status(500).json({ error: 'Verification failed' });
     }
 });
 
 app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
     try {
-        const { usn, email } = req.body || {};
-        if (!usn || !email) return res.status(400).json({ error: 'USN and email required' });
-        if (!/^[0-9]{10}$/.test(usn)) return res.status(400).json({ error: 'Invalid USN' });
+        const { usn } = req.body || {};
+        if (!usn) return res.status(400).json({ error: 'USN required' });
+        if (!/^\d{10}$/.test(usn)) return res.status(400).json({ error: 'Invalid USN' });
+
+        let students = await loadStudentsFromFirestore() || loadStudentsFromFile();
+        const student = students.find(s => s.usn === usn);
+
+        if (!student || student.status === 'left') return res.status(404).json({ error: 'Student not found' });
+
+        const email = student.institutional_email || student.email;
+        if (!email) return res.status(400).json({ error: 'No email found for student' });
+
         if (!mailer) return res.status(503).json({ error: 'Email service offline' });
-        const otp = String(Math.floor(100000 + Math.random() * 900000));
+
+        const otp = String(crypto.randomInt(100000, 1000000));
         otpStore.set(usn + "_carpool", { otp, email, expiresAt: Date.now() + 10 * 60 * 1000 });
+
         await mailer.sendMail({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to: email,
             subject: 'NST Carpool OTP',
             text: `Your NST carpool OTP is ${otp}. It expires in 10 minutes.`
         });
-        res.json({ success: true });
+
+        const obscuredEmail = email.replace(/(.{2})([^@]*)(@.*)/, '$1***$3');
+        res.json({ success: true, message: `OTP sent to ${obscuredEmail}` });
     } catch (e) {
+        console.error("Carpool OTP send failed:", e);
         res.status(500).json({ error: 'OTP send failed' });
     }
 });
@@ -474,14 +458,30 @@ app.post('/api/carpool/verify-otp', apiLimiter, (req, res) => {
     const entry = otpStore.get(usn + "_carpool");
     if (!entry || entry.expiresAt <= Date.now()) return res.status(400).json({ error: 'OTP expired' });
     if (entry.otp !== otp) return res.status(400).json({ error: 'OTP invalid' });
+
+    let name = `Student ${usn.slice(-4)}`;
+    let photo = '';
+    try {
+        const students = loadStudentsFromFile();
+        const student = students.find(s => s.usn === usn);
+        if (student) {
+            name = student.name || name;
+            photo = student.photo || photo;
+        }
+    } catch (e) {
+        console.error("Failed to load student name/photo", e);
+    }
+
     const token = makeToken();
     carpoolSessions.set(token, {
         usn,
         email: entry.email,
+        name,
+        photo,
         expiresAt: Date.now() + 60 * 60 * 1000
     });
     otpStore.delete(usn + "_carpool");
-    res.json({ success: true, token, email: entry.email });
+    res.json({ success: true, token, email: entry.email, name, photo });
 });
 
 app.post('/api/carpool/requests', apiLimiter, requireCarpoolSession, (req, res) => {
@@ -489,10 +489,18 @@ app.post('/api/carpool/requests', apiLimiter, requireCarpoolSession, (req, res) 
     if (!direction || !time) return res.status(400).json({ error: 'Direction and time required' });
     const parsedTime = new Date(time);
     if (Number.isNaN(parsedTime.getTime())) return res.status(400).json({ error: 'Invalid time' });
+
+    const existingIndex = carpoolRequests.findIndex(r => r.usn === req.carpoolUser.usn);
+    if (existingIndex !== -1) {
+        carpoolRequests.splice(existingIndex, 1);
+    }
+
     const request = {
         id: makeToken(),
         usn: req.carpoolUser.usn,
         email: req.carpoolUser.email,
+        name: req.carpoolUser.name,
+        photo: req.carpoolUser.photo,
         direction,
         flightCode: (flightCode || '').trim(),
         time: parsedTime,
@@ -512,26 +520,70 @@ app.get('/api/carpool/status', apiLimiter, (req, res) => {
     });
 });
 
-app.get('/api/carpool/matches', apiLimiter, (req, res) => {
-    const matches = buildMatches();
+app.get('/api/carpool/public-requests', apiLimiter, requireCarpoolSession, (req, res) => {
+    cleanOldEntries();
+    const hasRequest = carpoolRequests.some(r => r.usn === req.carpoolUser.usn);
+    if (!hasRequest) {
+        return res.json({
+            requests: [],
+            locked: true,
+            message: "Please join a journey to see other travelers."
+        });
+    }
+
     res.json({
-        matches: matches.map(match => ({
-            id: match.id,
-            direction: match.direction,
-            time: match.time,
-            wait: match.wait,
-            name: `Student ${match.users[1].usn.slice(-4)}`
-        })),
-        activeRequests: getActiveRequestsCount(),
-        matchCount: matches.length
+        requests: carpoolRequests.map(r => ({
+            id: r.id,
+            name: r.name || `Student ${String(r.usn || '0000').slice(-4)}`,
+            photo: r.photo || '',
+            direction: r.direction,
+            time: r.time,
+            flightCode: r.flightCode
+        }))
     });
+});
+
+app.get('/api/carpool/matches', apiLimiter, requireCarpoolSession, (req, res) => {
+    const allMatches = buildMatches();
+    const filtered = allMatches.filter(m =>
+        m.users.some(u => u.usn === req.carpoolUser.usn)
+    );
+
+    res.json({
+        matches: filtered.map(match => {
+            const other = match.users.find(u => u.usn !== req.carpoolUser.usn) || match.users[1];
+            return {
+                id: match.id,
+                direction: match.direction,
+                time: other.time,
+                window: match.time,
+                wait: match.wait,
+                name: other.name || `Student ${String(other.usn || '0000').slice(-4)}`
+            };
+        }),
+        activeRequests: getActiveRequestsCount(),
+        matchCount: filtered.length
+    });
+});
+
+app.post('/api/carpool/cancel', apiLimiter, requireCarpoolSession, (req, res) => {
+    const { requestId } = req.body || {};
+    if (!requestId) return res.status(400).json({ error: 'Request ID required' });
+
+    const index = carpoolRequests.findIndex(r => r.id === requestId && r.usn === req.carpoolUser.usn);
+    if (index !== -1) {
+        carpoolRequests.splice(index, 1);
+    }
+    publishMatches();
+    res.json({ success: true });
 });
 
 app.post('/api/carpool/accept', apiLimiter, requireCarpoolSession, async (req, res) => {
     try {
         const { matchId } = req.body || {};
         if (!matchId) return res.status(400).json({ error: 'Match required' });
-        const match = buildMatches().find(item => item.id === matchId);
+        const matches = buildMatches();
+        const match = matches.find(item => item.id === matchId);
         if (!match) return res.status(404).json({ error: 'Match not found' });
         if (!mailer) return res.status(503).json({ error: 'Email service offline' });
         const requester = req.carpoolUser;
@@ -550,6 +602,7 @@ app.post('/api/carpool/accept', apiLimiter, requireCarpoolSession, async (req, r
         });
         res.json({ success: true });
     } catch (e) {
+        console.error("Carpool accept email send failed:", e);
         res.status(500).json({ error: 'Email send failed' });
     }
 });
@@ -560,12 +613,26 @@ app.get('/api/carpool/stream', apiLimiter, (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
     sseClients.add(res);
+
+    const matches = buildMatches();
     res.write(`data: ${JSON.stringify({
-        matches: [],
+        matches: matches.map(m => ({
+            id: m.id,
+            direction: m.direction,
+            time: m.time,
+            wait: m.wait,
+            name: `Student ${String(m.users[1].usn || '0000').slice(-4)}`
+        })),
         activeRequests: getActiveRequestsCount(),
-        matchCount: 0
+        publicRequests: carpoolRequests.map(r => ({
+            id: r.id,
+            name: r.name || `Student ${String(r.usn || '0000').slice(-4)}`,
+            photo: r.photo || '',
+            direction: r.direction,
+            time: r.time,
+            flightCode: r.flightCode
+        }))
     })}\n\n`);
-    publishMatches();
 
     const keepAlive = setInterval(() => res.write(': keep-alive\n\n'), 20000);
     req.on('close', () => {
@@ -589,11 +656,13 @@ app.get('/api/students', apiLimiter, authenticateToken, async (req, res) => {
         const activeFallback = fallbackStudents.filter(s => s.status !== 'left');
         res.json(activeFallback);
     } catch (e) {
+        console.error("Firestore loading error:", e);
         try {
             const fallbackStudents = loadStudentsFromFile();
             const activeFallback = fallbackStudents.filter(s => s.status !== 'left');
             return res.json(activeFallback);
         } catch (fallbackError) {
+            console.error("Fallback file loading error:", fallbackError);
             return res.status(500).json({ error: 'Error loading data' });
         }
     }
@@ -609,14 +678,14 @@ app.get('/api/cron/birthday', async (req, res) => {
     const secretQuery = req.query.secret;
     const expectedSecret = process.env.CRON_SECRET;
     
-    console.log(`[Cron Debug] expectedSecret: ${expectedSecret ? 'Defined (len: ' + expectedSecret.length + ')' : 'Undefined'}`);
-    console.log(`[Cron Debug] secretQuery: ${secretQuery ? 'Defined (len: ' + secretQuery.length + ')' : 'Undefined/Empty'}`);
-    console.log(`[Cron Debug] authHeader: ${authHeader ? 'Defined (len: ' + authHeader.length + ')' : 'Undefined/Empty'}`);
+    console.log(`[Cron Debug] expectedSecret: ${expectedSecret ? 'Defined (len: ' + String(expectedSecret).length + ')' : 'Undefined'}`);
+    console.log(`[Cron Debug] secretQuery: ${secretQuery ? 'Defined (len: ' + String(secretQuery).length + ')' : 'Undefined/Empty'}`);
+    console.log(`[Cron Debug] authHeader: ${authHeader ? 'Defined (len: ' + String(authHeader).length + ')' : 'Undefined/Empty'}`);
 
     if (expectedSecret) {
         const authorized = authHeader === `Bearer ${expectedSecret}` || secretQuery === expectedSecret;
         if (!authorized) {
-            console.warn(`[Cron Debug] Authorization check failed. queryMatches: ${secretQuery === expectedSecret}, headerMatches: ${authHeader === `Bearer ${expectedSecret}`}`);
+            console.warn(`[Cron Debug] Authorization check failed. queryMatches: ${secretQuery === expectedSecret}, headerMatches: ${authHeader === 'Bearer ' + expectedSecret}`);
             return res.status(401).json({ error: 'Unauthorized' });
         }
     }

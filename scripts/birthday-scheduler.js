@@ -173,7 +173,7 @@ async function sendClassmateBirthdayReminder(mailer, birthdayStudents, allStuden
     let mainWhatsappButtonHtml = '';
     if (!isPlural) {
         const student = birthdayStudents[0];
-        const rawMobile = student.mobile_number || student.mobile || student.phone || student.phone_number || student.phoneNumber;
+        const rawMobile = student.mobile_number;
         if (rawMobile) {
             let cleaned = String(rawMobile).replace(/\D/g, '');
             if (cleaned.length === 10) {

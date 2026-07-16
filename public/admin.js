@@ -26,7 +26,7 @@ let allStudents = [];
 let currentBgView = 'grid';
 
 function getMobileNumber(student) {
-    return student?.mobile_number || student?.mobile || student?.phone || student?.phone_number || student?.phoneNumber || '';
+    return student?.mobile_number || '';
 }
 
 function normalizeBloodGroup(value) {
@@ -356,7 +356,7 @@ function calculateStats() {
         'Not Set': 0
     };
     activeStudents.forEach(student => {
-        const bloodGroup = normalizeBloodGroup(student.blood_group || student.bloodGroup);
+        const bloodGroup = normalizeBloodGroup(student.blood_group);
         const key = bloodGroup || 'Not Set';
         bloodGroupCounts[key] = (bloodGroupCounts[key] || 0) + 1;
     });
@@ -482,7 +482,7 @@ function calculateStats() {
     function handleBloodGroupClick(group) {
         const studentsForGroup = allStudents.filter(s => {
             if (s.status === 'left') return false;
-            const bg = normalizeBloodGroup(s.blood_group || s.bloodGroup);
+            const bg = normalizeBloodGroup(s.blood_group);
             if (!bg) return group === 'Not Set';
             return bg === group;
         });
@@ -657,7 +657,7 @@ function openStudentModal(usn) {
                 <div class="modal-detail-row"><span class="modal-label">Institutional Email</span> <span class="modal-value">${s.institutional_email || '-'}</span></div>
                 <div class="modal-detail-row"><span class="modal-label">Gender</span> <span class="modal-value">${s.gender || '-'}</span></div>
                 <div class="modal-detail-row"><span class="modal-label">Birthday</span> <span class="modal-value">${s.birthday || '-'}</span></div>
-                <div class="modal-detail-row"><span class="modal-label">Blood Group</span> <span class="modal-value" style="font-weight:600; color:var(--primary-600);">${s.blood_group || s.bloodGroup || '-'}</span></div>
+                <div class="modal-detail-row"><span class="modal-label">Blood Group</span> <span class="modal-value" style="font-weight:600; color:var(--primary-600);">${s.blood_group || '-'}</span></div>
                 
                 <div class="modal-detail-row">
                     <span class="modal-label">LinkedIn</span> 

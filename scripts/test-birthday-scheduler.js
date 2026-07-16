@@ -115,7 +115,7 @@ async function runTest() {
 
     // Generate WhatsApp links for testing
     let testWhatsappLink = '';
-    const rawMobile = testStudent.mobile_number || testStudent.mobile || testStudent.phone || testStudent.phone_number || testStudent.phoneNumber;
+    const rawMobile = testStudent.mobile_number;
     if (rawMobile) {
         let cleaned = String(rawMobile).replace(/\D/g, '');
         if (cleaned.length === 10) {
