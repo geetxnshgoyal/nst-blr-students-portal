@@ -346,17 +346,13 @@ app.post('/api/admin/verify', authLimiter, (req, res) => {
 app.get('/api/admin/students', apiLimiter, authenticateToken, async (req, res) => {
     try {
         const firebaseStudents = await loadStudentsFromFirestore();
-        const students = firebaseStudents || loadStudentsFromFile();
-        res.json({ success: true, students });
-    } catch (e) {
-        console.error("Firestore get students error, falling back to local file:", e);
-        try {
-            const fallbackStudents = loadStudentsFromFile();
-            res.json({ success: true, students: fallbackStudents });
-        } catch (fallbackError) {
-            console.error("Fallback students file load error:", fallbackError);
-            res.status(500).json({ error: 'Error loading data' });
+        if (!firebaseStudents) {
+            return res.status(500).json({ error: 'Database service offline' });
         }
+        res.json({ success: true, students: firebaseStudents });
+    } catch (e) {
+        console.error("Firestore get students error:", e);
+        res.status(500).json({ error: 'Error loading data' });
     }
 });
 
@@ -366,7 +362,8 @@ app.post('/api/portal/request-otp', apiLimiter, async (req, res) => {
         if (!usn) return res.status(400).json({ error: 'USN required' });
         if (!/^\d{10}$/.test(usn)) return res.status(400).json({ error: 'Invalid USN' });
 
-        let students = await loadStudentsFromFirestore() || loadStudentsFromFile();
+        let students = await loadStudentsFromFirestore();
+        if (!students) return res.status(500).json({ error: 'Database service offline' });
         const student = students.find(s => s.usn === usn);
 
         if (!student || student.status === 'left') return res.status(404).json({ error: 'Student not found' });
@@ -404,7 +401,8 @@ app.post('/api/portal/verify-otp', apiLimiter, async (req, res) => {
 
         otpStore.delete(usn + "_portal");
 
-        let students = await loadStudentsFromFirestore() || loadStudentsFromFile();
+        let students = await loadStudentsFromFirestore();
+        if (!students) return res.status(500).json({ error: 'Database service offline' });
         const student = students.find(s => s.usn === usn);
 
         if (!student) return res.status(404).json({ error: 'Student not found' });
@@ -424,7 +422,8 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
         if (!usn) return res.status(400).json({ error: 'USN required' });
         if (!/^\d{10}$/.test(usn)) return res.status(400).json({ error: 'Invalid USN' });
 
-        let students = await loadStudentsFromFirestore() || loadStudentsFromFile();
+        let students = await loadStudentsFromFirestore();
+        if (!students) return res.status(500).json({ error: 'Database service offline' });
         const student = students.find(s => s.usn === usn);
 
         if (!student || student.status === 'left') return res.status(404).json({ error: 'Student not found' });
@@ -452,7 +451,7 @@ app.post('/api/carpool/request-otp', apiLimiter, async (req, res) => {
     }
 });
 
-app.post('/api/carpool/verify-otp', apiLimiter, (req, res) => {
+app.post('/api/carpool/verify-otp', apiLimiter, async (req, res) => {
     const { usn, otp } = req.body || {};
     if (!usn || !otp) return res.status(400).json({ error: 'USN and OTP required' });
     const entry = otpStore.get(usn + "_carpool");
@@ -462,11 +461,13 @@ app.post('/api/carpool/verify-otp', apiLimiter, (req, res) => {
     let name = `Student ${usn.slice(-4)}`;
     let photo = '';
     try {
-        const students = loadStudentsFromFile();
-        const student = students.find(s => s.usn === usn);
-        if (student) {
-            name = student.name || name;
-            photo = student.photo || photo;
+        const students = await loadStudentsFromFirestore();
+        if (students) {
+            const student = students.find(s => s.usn === usn);
+            if (student) {
+                name = student.name || name;
+                photo = student.photo || photo;
+            }
         }
     } catch (e) {
         console.error("Failed to load student name/photo", e);
@@ -652,19 +653,10 @@ app.get('/api/students', apiLimiter, authenticateToken, async (req, res) => {
             const activeStudents = firebaseStudents.filter(s => s.status !== 'left');
             return res.json(activeStudents);
         }
-        const fallbackStudents = loadStudentsFromFile();
-        const activeFallback = fallbackStudents.filter(s => s.status !== 'left');
-        res.json(activeFallback);
+        return res.status(500).json({ error: 'Database service offline' });
     } catch (e) {
         console.error("Firestore loading error:", e);
-        try {
-            const fallbackStudents = loadStudentsFromFile();
-            const activeFallback = fallbackStudents.filter(s => s.status !== 'left');
-            return res.json(activeFallback);
-        } catch (fallbackError) {
-            console.error("Fallback file loading error:", fallbackError);
-            return res.status(500).json({ error: 'Error loading data' });
-        }
+        return res.status(500).json({ error: 'Error loading data' });
     }
 });
 
